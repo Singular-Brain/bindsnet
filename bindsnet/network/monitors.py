@@ -1,5 +1,7 @@
 import os
 import torch
+from torch.utils.tensorboard import SummaryWriter
+from torchvision.utils import make_grid
 import numpy as np
 
 from abc import ABC
@@ -252,6 +254,297 @@ class NetworkMonitor(AbstractMonitor):
         elif fmt == "pickle":
             with open(path, "wb") as f:
                 torch.save(self.recording, f)
+
+    def reset_state_variables(self) -> None:
+        # language=rst
+        """
+        Resets recordings to empty ``torch.Tensors``.
+        """
+        # Reset to empty recordings
+        self.recording = {k: {} for k in self.layers + self.connections}
+
+        if self.time is not None:
+            self.i = 0
+
+        # If no simulation time is specified, specify 0-dimensional recordings.
+        if self.time is None:
+            for v in self.state_vars:
+                for l in self.layers:
+                    if hasattr(self.network.layers[l], v):
+                        self.recording[l][v] = torch.Tensor()
+
+                for c in self.connections:
+                    if hasattr(self.network.connections[c], v):
+                        self.recording[c][v] = torch.Tensor()
+
+        # If simulation time is specified, pre-allocate recordings in memory for speed.
+        else:
+            for v in self.state_vars:
+                for l in self.layers:
+                    if hasattr(self.network.layers[l], v):
+                        self.recording[l][v] = torch.zeros(
+                            self.time, *getattr(self.network.layers[l], v).size()
+                        )
+
+                for c in self.connections:
+                    if hasattr(self.network.connections[c], v):
+                        self.recording[c][v] = torch.zeros(
+                            self.time, *getattr(self.network.layers[c], v).size()
+                        )
+ 
+class TensorBoardMonitor(AbstractMonitor):
+    def __init__(
+        self,
+        network: "Network",
+        state_vars: Iterable[str] = None,
+        layers: Optional[Iterable[str]] = None,
+        connections: Optional[Iterable[str]] = None,
+        time: Optional[int] = None,
+        **kwargs,
+        ) -> None:
+        """
+        Constructs a ``TensorBoard`` callback.
+
+        :param network: Network to record state variables from.
+        :param layers: Layers to record state variables from.
+        :param connections: Connections to record state variables from.
+        :param state_vars: List of strings indicating names of state variables to record.
+        :param rewards: whether to record rewards.
+
+        Keyword arguments:
+
+        :param str log_dir: Save directory location. Default is runs/**CURRENT_DATETIME_HOSTNAME**, which changes after each
+        run. Use hierarchical folder structure to compare between runs easily. e.g. pass in 'runs/exp1', 'runs/exp2',
+        etc. for each new experiment to compare across them.
+        :param string comment: Comment log_dir suffix appended to the default log_dir. If log_dir is assigned, this argument 
+        has no effect.
+        :param int purge_step: When logging crashes at step T+X and restarts at step T, any events whose global_step larger 
+        or equal to T will be purged and hidden from TensorBoard. Note that crashed and resumed experiments should have 
+        the same log_dir.
+        :param int max_queue: Size of the queue for pending events and summaries before one of the 'add' calls forces a flush
+        to disk. Default is ten items.
+        :param int flush_secs: How often, in seconds, to flush the pending events and summaries to disk. Default is every two
+        minutes.
+        :param string filename_suffix: Suffix added to all event filenames in the log_dir directory. More details on filename
+        construction in tensorboard.summary.writer.event_file_writer.EventFileWriter.
+        """
+        # Initialize tensorboard SummaryWriter object.
+        self.writer = SummaryWriter(**kwargs)
+        self.step = 0
+
+        # Initialize network, layers, and connections.
+        self.network = network
+        self.layers = layers if layers is not None else list(self.network.layers.keys())
+        self.connections = (
+            connections
+            if connections is not None
+            else list(self.network.connections.keys())
+        )
+        self.state_vars = state_vars if state_vars is not None else ("v", "s")
+        self.time = time
+
+        if self.time is not None:
+            self.i = 0
+
+        # Initialize empty recording.
+        self.recording = {k: {} for k in self.layers + self.connections}
+
+        # If no simulation time is specified, specify 0-dimensional recordings.
+        if self.time is None:
+            for v in self.state_vars:
+                for l in self.layers:
+                    if hasattr(self.network.layers[l], v):
+                        self.recording[l][v] = torch.Tensor()
+
+                for c in self.connections:
+                    if hasattr(self.network.connections[c], v):
+                        self.recording[c][v] = torch.Tensor()
+
+        # If simulation time is specified, pre-allocate recordings in memory for speed.
+        else:
+            for v in self.state_vars:
+                for l in self.layers:
+                    if hasattr(self.network.layers[l], v):
+                        self.recording[l][v] = torch.zeros(
+                            self.time, *getattr(self.network.layers[l], v).size()
+                        )
+
+                for c in self.connections:
+                    if hasattr(self.network.connections[c], v):
+                        self.recording[c][v] = torch.zeros(
+                            self.time, *getattr(self.network.connections[c], v).size()
+                        )
+
+        # Initialize empty recording.
+        self.recording = {k: {} for k in self.layers + self.connections}
+
+        # Specify 0-dimensional recordings.
+        for v in self.state_vars:
+            for l in self.layers:
+                if hasattr(self.network.layers[l], v):
+                    self.recording[l][v] = torch.zeros(1)
+
+            for c in self.connections:
+                if hasattr(self.network.connections[c], v):
+                    self.recording[c][v] = torch.zeros(1)
+        
+        # use tags to map the network parameters names to readable names
+        self.tags ={
+            's': 'Spikes',
+            'v': 'Voltages',
+            'x': 'Eligibility trace'            
+        }
+
+    def record(self) -> None:
+        # language=rst
+        """
+        Appends the current value of the recorded state variables to the recording.
+        """
+        if self.time is None:
+            for v in self.state_vars:
+                for l in self.layers:
+                    if hasattr(self.network.layers[l], v):
+                        data = getattr(self.network.layers[l], v).unsqueeze(0).float()
+                        self.recording[l][v] = torch.cat(
+                            (self.recording[l][v], data), 0
+                        )
+
+                for c in self.connections:
+                    if hasattr(self.network.connections[c], v):
+                        data = getattr(self.network.connections[c], v).unsqueeze(0)
+                        self.recording[c][v] = torch.cat(
+                            (self.recording[c][v], data), 0
+                        )
+
+        else:
+            for v in self.state_vars:
+                for l in self.layers:
+                    if hasattr(self.network.layers[l], v):
+                        data = getattr(self.network.layers[l], v).float().unsqueeze(0)
+                        self.recording[l][v] = torch.cat(
+                            (self.recording[l][v][1:].type(data.type()), data), 0
+                        )
+
+                for c in self.connections:
+                    if hasattr(self.network.connections[c], v):
+                        data = getattr(self.network.connections[c], v).unsqueeze(0)
+                        self.recording[c][v] = torch.cat(
+                            (self.recording[c][v][1:].type(data.type()), data), 0
+                        )
+
+            self.i += 1
+
+    def _add_weights(self):
+        # language=rst
+        """
+        Add weights histograms to the SummeryWriter.
+        """
+        for c in self.connections:
+            self.writer.add_histogram(
+                f'{c[0]} to {c[1]}/Weights',
+                self.network.connections[c].w,
+                self.step
+                )
+            if self.network.connections[c].b is not None:
+                self.writer.add_histogram(
+                    f'{c[0]} to {c[1]}/Biases',
+                    self.network.connections[c].w,
+                    self.step
+                    )
+
+    def _add_scalers(self):
+        # language=rst
+        """
+        Add state variables plots to the SummeryWriter.
+        """
+        for v in self.state_vars:
+            for l in self.layers:
+                if hasattr(self.network.layers[l], v):
+                    self.writer.add_scalar(
+                        l + '/' + self.tags.get(v, v),
+                        self.recording[l][v].sum(),
+                        self.step
+                        )
+                
+            for c in self.connections:
+                if hasattr(self.network.connections[c], v):
+                    self.writer.add_scalar(
+                        c[0] + ' to ' + c[1] + '/' + self.tags.get(v, v),
+                        self.recording[c][v].sum(),
+                        self.step
+                        )
+
+    def _add_grids(self):
+        # language=rst
+        """
+        Add state variables grids to the SummeryWriter.
+        """
+        for v in self.state_vars:
+            for l in self.layers:
+                if hasattr(self.network.layers[l], v):
+                    # Shuffle variable into 1x1x#neuronsxT
+                    grid = self.recording[l][v].view(1, 1, -1, self.recording[l][v].shape[-1])
+                    spike_grid_img = make_grid(grid, nrow=1, pad_value=0.5)
+                    self.writer.add_image(
+                        l + '/' + self.tags.get(v, v) + ' grid',
+                        spike_grid_img,
+                        self.step
+                        )
+                
+            for c in self.connections:
+                if hasattr(self.network.connections[c], v):
+                    # Shuffle variable into 1x1x#neuronsxT
+                    grid = self.recording[c][v].view(1, 1, -1, self.recording[c][v].shape[-1])
+                    voltage_grid_img = make_grid(grid, nrow=1, pad_value=0)
+                    self.writer.add_image(
+                        c[0] + ' to ' + c[1] + '/' + self.tags.get(v, v) + ' grid',
+                        voltage_grid_img, 
+                        self.step
+                        )
+
+    def update(self, step = None) -> None:
+        # language=rst
+        """
+        Adds data to tensorboard after every step.
+        """
+        if step: 
+            self.step = step
+        self._add_weights()
+        self._add_scalers()
+        self._add_grids()
+        self.step += 1
+
+    #TODO
+    def plot_reward(
+        self,
+        reward_list: list,
+        reward_window: int = None,
+        tag: str = "reward",
+        step: int = None,
+    ) -> None:
+        # language=rst
+        """
+        Plot the accumulated reward for each episode.
+
+        :param reward_list: The list of recent rewards to be plotted.
+        :param reward_window: The length of the window to compute a moving average over.
+        :param tag: A unique tag to associate the data with.
+        :param step: The step of the pipeline.
+        """
+        self.writer.add_scalar(tag, reward_list[-1], step)
+
+    def plot_obs(self, obs: torch.Tensor, tag: str = "obs", step: int = None) -> None:
+        # language=rst
+        """
+        Pulls the observation off of torch and sets up for Matplotlib
+        plotting.
+
+        :param obs: A 2D array of floats depicting an input image.
+        :param tag: A unique tag to associate the data with.
+        :param step: The step of the pipeline.
+        """
+        obs_grid = make_grid(obs.float(), nrow=4, normalize=True)
+        self.writer.add_image(tag, obs_grid, step)
 
     def reset_state_variables(self) -> None:
         # language=rst

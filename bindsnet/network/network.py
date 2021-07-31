@@ -160,6 +160,16 @@ class Network(torch.nn.Module):
         monitor.network = self
         monitor.dt = self.dt
 
+    def add_reward(self, reward_fn: AbstractReward, name: str) -> None:
+        # language=rst
+        """
+        Adds a reward_fn on a network object to the network.
+
+        :param reward_fn: An instance of class ``AbstractReward``.
+        :param name: Logical name of monitor object.
+        """
+        reward_fn.network = self
+
 
     def save(self, file_name: str) -> None:
         # language=rst
@@ -418,6 +428,9 @@ class Network(torch.nn.Module):
             # Record state variables of interest.
             for m in self.monitors:
                 self.monitors[m].record(**kwargs)
+
+            if self.reward_fn is not None:
+                kwargs["reward"] = self.reward_fn.online_compute(**kwargs)
 
         # Re-normalize connections.
         for c in self.connections:
