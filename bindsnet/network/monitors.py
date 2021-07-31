@@ -395,7 +395,7 @@ class TensorBoardMonitor(AbstractMonitor):
             'x': 'Eligibility trace'            
         }
 
-    def record(self) -> None:
+    def record(self, **kwargs) -> None:
         # language=rst
         """
         Appends the current value of the recorded state variables to the recording.
