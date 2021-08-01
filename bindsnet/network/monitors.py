@@ -471,10 +471,9 @@ class TensorBoardMonitor(AbstractMonitor):
                 if hasattr(self.network.layers[l], v):
                     # Shuffle variable into 1x1x#neuronsxT
                     grid = self.recording[l][v].view(self.recording[l][v].shape[0], -1)
-                    spike_grid_img = make_grid(grid, nrow=1, pad_value=0)
                     self.writer.add_image(
                         l + '/' + self.tags.get(v, v) + ' grid',
-                        spike_grid_img,
+                        grid,
                         self.step,
                         dataformats= 'HW',
                         )
