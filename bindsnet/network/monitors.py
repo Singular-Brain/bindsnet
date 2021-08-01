@@ -483,7 +483,7 @@ class TensorBoardMonitor(AbstractMonitor):
             for l in self.layers:
                 if hasattr(self.network.layers[l], v):
                     # Shuffle variable into 1x1x#neuronsxT
-                    grid = self.recording[l][v].view(1, 1, -1, self.recording[l][v].shape[-1])
+                    grid = self.recording[l][v].view(1, 1, -1, self.recording[l][v].shape[0])
                     spike_grid_img = make_grid(grid, nrow=1, pad_value=0.5)
                     self.writer.add_image(
                         l + '/' + self.tags.get(v, v) + ' grid',
@@ -494,7 +494,7 @@ class TensorBoardMonitor(AbstractMonitor):
             for c in self.connections:
                 if hasattr(self.network.connections[c], v):
                     # Shuffle variable into 1x1x#neuronsxT
-                    grid = self.recording[c][v].view(1, 1, -1, self.recording[c][v].shape[-1])
+                    grid = self.recording[c][v].view(1, 1, -1, self.recording[c][v].shape[0])
                     voltage_grid_img = make_grid(grid, nrow=1, pad_value=0)
                     self.writer.add_image(
                         c[0] + ' to ' + c[1] + '/' + self.tags.get(v, v) + ' grid',
