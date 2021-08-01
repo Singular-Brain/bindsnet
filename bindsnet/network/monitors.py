@@ -375,9 +375,6 @@ class TensorBoardMonitor(AbstractMonitor):
                             self.time, *getattr(self.network.connections[c], v).size()
                         )
 
-        # Initialize empty recording.
-        self.recording = {k: {} for k in self.layers + self.connections}
-        
         # use tags to map the network parameters names to readable names
         self.tags ={
             's': 'Spikes',
