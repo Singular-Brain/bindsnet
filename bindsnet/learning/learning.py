@@ -189,16 +189,16 @@ class PostPre(LearningRule):
         # Pre-synaptic update.
         if self.nu[0]:
             source_s = self.source.s.view(batch_size, -1).unsqueeze(2).float().to(self.connection.w.device)
-            target_x = self.target.x.view(batch_size, -1).unsqueeze(1) * self.nu[0]
+            target_x = (self.target.x.view(batch_size, -1).unsqueeze(1) * self.nu[0]).to(self.connection.w.device)
             self.connection.w -= self.reduction(torch.bmm(source_s, target_x), dim=0)
             del source_s, target_x
 
         # Post-synaptic update.
         if self.nu[1]:
             target_s = (
-                self.target.s.view(batch_size, -1).unsqueeze(1).float() * self.nu[1].to(self.connection.w.device)
-            )
-            source_x = self.source.x.view(batch_size, -1).unsqueeze(2)
+                self.target.s.view(batch_size, -1).unsqueeze(1).float() * self.nu[1]
+            ).to(self.connection.w.device)
+            source_x = self.source.x.view(batch_size, -1).unsqueeze(2).to(self.connection.w.device)
             self.connection.w += self.reduction(torch.bmm(source_x, target_s), dim=0)
             del source_x, target_s
 
