@@ -507,6 +507,8 @@ class TensorBoardMonitor(AbstractMonitor):
         self._add_grids()
         self.step += 1
 
+        self.writer.flush()
+
     #TODO
     def plot_reward(
         self,
