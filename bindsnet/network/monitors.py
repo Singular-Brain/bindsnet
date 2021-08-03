@@ -435,13 +435,13 @@ class TensorBoardMonitor(AbstractMonitor):
         for c in self.connections:
             self.writer.add_histogram(
                 f'{c[0]} to {c[1]}/Weights',
-                self.network.connections[c].w.clone(),
+                self.network.connections[c].w.tolist(),
                 self.step
                 )
             if self.network.connections[c].b is not None:
                 self.writer.add_histogram(
                     f'{c[0]} to {c[1]}/Biases',
-                    self.network.connections[c].b.clone(),
+                    self.network.connections[c].b.tolist(),
                     self.step
                     )
 
