@@ -448,16 +448,16 @@ class TensorBoardMonitor(AbstractMonitor):
             for l in self.layers:
                 if hasattr(self.network.layers[l], v):
                     self.writer.add_scalar(
-                        l + '/' + self.tags.get(v, v),
-                        self.recording[l][v].sum(),
+                        l + '/' + self.tags.get(v, v) + ' (mean)',
+                        self.recording[l][v].mean(),
                         self.step
                         )
                 
             for c in self.connections:
                 if hasattr(self.network.connections[c], v):
                     self.writer.add_scalar(
-                        c[0] + ' to ' + c[1] + '/' + self.tags.get(v, v),
-                        self.recording[c][v].sum(),
+                        c[0] + ' to ' + c[1] + '/' + self.tags.get(v, v) + ' (mean)',
+                        self.recording[c][v].mean(),
                         self.step
                         )
 
