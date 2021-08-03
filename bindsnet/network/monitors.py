@@ -421,6 +421,12 @@ class TensorBoardMonitor(AbstractMonitor):
 
             self.i += 1
 
+        if kwargs.get('reward', None):
+            if self.recording.get('reward', None) is None:
+                self.recording['reward'] = []
+            self.recording['reward'].append(kwargs['reward'])
+            
+
     def _add_weights(self):
         # language=rst
         """
@@ -569,3 +575,7 @@ class TensorBoardMonitor(AbstractMonitor):
                         self.recording[c][v] = torch.zeros(
                             self.time, *getattr(self.network.layers[c], v).size()
                         )
+
+        # Reset rewards 
+        if self.recording.get('reward', None) is not None:
+            self.recording['reward'] = []
