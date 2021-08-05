@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from ... import manual_seed
+from .. import manual_seed
 import torch
 
 
