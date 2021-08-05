@@ -111,11 +111,14 @@ class DynamicDopamineInjection(AbstractReward):
         self.l = kwargs.get('dopaminergic_layer')
         self.n_labels = kwargs.get('n_labels')
         self.n_per_class = kwargs.get('neuron_per_class')
-        self.dopamine_per_spike = kwargs.get('dopamine_per_spike')
+        self.dopamine_per_spike = kwargs.get('dopamine_per_spike', 0.01)
+        self.dopamine_for_correct_pred = kwargs.get('dopamine_for_correct_pred', 1.0)
         self.tc_reward = kwargs.get('tc_reward')
-        self.dopamine_base = kwargs.get('dopamine_base')
+        self.dopamine_base = kwargs.get('dopamine_base', 0.002)
         dt = torch.as_tensor(self.dt)
-        self.decay = torch.exp(-dt / self.tc_reward) 
+        self.decay = torch.exp(-dt / self.tc_reward)
+
+        self.variant = kwargs['variant']
 
         self.label = kwargs['labels']
 
@@ -143,7 +146,19 @@ class DynamicDopamineInjection(AbstractReward):
                         * (self.dopamine - self.dopamine_base)
                         + self.dopamine_base
         ).to(s.device)
+
         target_spikes = (s[:,self.label*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)
-        self.dopamine += target_spikes * self.dopamine_per_spike
+        if self.dopamine_for_correct_pred != 0 or self.variant == 'true_pred':
+            label_spikes = [0.0]*self.n_labels
+            for i in range(self.n_labels):
+                label_spikes[i] = (s[:,i*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)
+            if target_spikes == max(label_spikes):
+                self.dopamine += self.dopamine_for_correct_pred
+
+        if self.variant == 'true_pred':
+            if target_spikes == max(label_spikes):
+                self.dopamine += target_spikes * self.dopamine_per_spike
+        else:
+            self.dopamine += target_spikes * self.dopamine_per_spike
 
         return self.dopamine
