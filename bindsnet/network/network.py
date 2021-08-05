@@ -429,9 +429,6 @@ class Network(torch.nn.Module):
             for m in self.monitors:
                 self.monitors[m].record(**kwargs)
 
-            if self.reward_fn is not None:
-                kwargs["reward"] = self.reward_fn.online_compute(**kwargs)
-
         # Re-normalize connections.
         for c in self.connections:
             self.connections[c].normalize()
