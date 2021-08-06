@@ -143,6 +143,7 @@ class DynamicDopamineInjection(AbstractReward):
         Updates internal variables needed to modify reward. Usually called once per
         episode.
         """
+        print('hi')
         s = self.network.layers[self.l].s
         assert s.shape[0] == 1, "This method has not yet been implemented for batch_size>1 !" 
         self.dopamine = (
