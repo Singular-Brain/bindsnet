@@ -115,7 +115,7 @@ class DynamicDopamineInjection(AbstractReward):
         self.dopamine_for_correct_pred = kwargs.get('dopamine_for_correct_pred', 1.0)
         self.tc_reward = kwargs.get('tc_reward')
         self.dopamine_base = kwargs.get('dopamine_base', 0.002)
-        self.give_reward = kwargs.get('give_reward', False)
+        self.give_reward = kwargs['give_reward']
         dt = torch.as_tensor(self.dt)
         self.decay = torch.exp(-dt / self.tc_reward)
 
