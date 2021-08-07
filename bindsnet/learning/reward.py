@@ -145,7 +145,7 @@ class DynamicDopamineInjection(AbstractReward):
         """
         # assert s.shape[0] == 1, "This method has not yet been implemented for batch_size>1 !" 
         if self.label is None:
-            return
+            return 0
         
         target_spikes = self.layers[f"output_{self.label}"].s
         self.dopamine = (
