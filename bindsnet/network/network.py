@@ -86,6 +86,7 @@ class Network(torch.nn.Module):
         dt: float = 1.0,
         batch_size: int = 1,
         learning: bool = True,
+        online: Optional[Type[bool]] = False,
         reward_fn: Optional[Type[AbstractReward]] = None,
     ) -> None:
         # language=rst
@@ -106,6 +107,7 @@ class Network(torch.nn.Module):
         self.layers = {}
         self.connections = {}
         self.monitors = {}
+        self.online = online
 
         self.train(learning)
 
@@ -422,7 +424,7 @@ class Network(torch.nn.Module):
             # # Get input to all layers.
             # current_inputs.update(self._get_inputs())
 
-            if self.reward_fn is not None:
+            if self.reward_fn is not None and self.online == True:
                 kwargs["reward"] = self.reward_fn.online_compute(**kwargs)
 
             # Record state variables of interest.
