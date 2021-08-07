@@ -148,13 +148,24 @@ class DynamicDopamineInjection(AbstractReward):
             return 0
         
         target_spikes = self.layers[f"output_{self.label}"].s
+        
         self.dopamine = (
-                        self.decay
-                        * (self.dopamine - self.dopamine_base)
-                        + self.dopamine_base
-        ).to(target_spikes.device)
+                self.decay
+                * (self.dopamine - self.dopamine_base)
+                + self.dopamine_base
+                ).to(target_spikes.device)
 
-        self.dopamine += target_spikes.sum() * self.dopamine_per_spike
+        if self.variant == 'true_pred': 
+            output_layers_spikes = [l.s.sum() for l in self.layers if l.startswith("output")]   
+            if target_spikes.sum() == max(output_layers_spikes): 
+                self.dopamine += target_spikes.sum() * self.dopamine_per_spike
+
+        elif self.variant == "pure_per_spike":  
+            self.dopamine += target_spikes.sum() * self.dopamine_per_spike
+        
+        else:
+            raise ValueError("variant not specified")
+        
         # target_spikes = (s[:,self.label*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)
         # if self.dopamine_for_correct_pred != 0 or self.variant == 'true_pred':
         #     label_spikes = [0.0]*self.n_labels
