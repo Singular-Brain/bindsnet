@@ -788,6 +788,7 @@ class MSTDPET(LearningRule):
         self.connection.w += (
             self.nu[0] * self.connection.dt * reward * self.eligibility_trace
         )
+        print(self.nu[0], self.connection.dt, reward, self.eligibility_trace)
 
         # Update P^+ and P^- values.
         self.p_plus *= torch.exp(-self.connection.dt / self.tc_plus)
