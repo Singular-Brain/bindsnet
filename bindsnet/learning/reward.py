@@ -108,7 +108,7 @@ class DynamicDopamineInjection(AbstractReward):
         """
         Computes/modifies reward.
         """
-        self.l = kwargs.get('dopaminergic_layer')
+        self.layers = kwargs.get('dopaminergic_layers')
         self.n_labels = kwargs.get('n_labels')
         self.n_per_class = kwargs.get('neuron_per_class')
         self.dopamine_per_spike = kwargs.get('dopamine_per_spike', 0.01)
@@ -143,26 +143,27 @@ class DynamicDopamineInjection(AbstractReward):
         Updates internal variables needed to modify reward. Usually called once per
         episode.
         """
-        s = self.network.layers[self.l].s
-        assert s.shape[0] == 1, "This method has not yet been implemented for batch_size>1 !" 
+        # assert s.shape[0] == 1, "This method has not yet been implemented for batch_size>1 !" 
+        target_spikes = self.layers[f"output_{self.label}"].s
         self.dopamine = (
                         self.decay
                         * (self.dopamine - self.dopamine_base)
                         + self.dopamine_base
-        ).to(s.device)
+        ).to(target_spikes.device)
 
-        target_spikes = (s[:,self.label*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)
-        if self.dopamine_for_correct_pred != 0 or self.variant == 'true_pred':
-            label_spikes = [0.0]*self.n_labels
-            for i in range(self.n_labels):
-                label_spikes[i] = (s[:,i*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)
-            if target_spikes == max(label_spikes):
-                self.dopamine += self.dopamine_for_correct_pred
+        self.dopamine += target_spikes.sum() * self.dopamine_per_spike
+        # target_spikes = (s[:,self.label*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)
+        # if self.dopamine_for_correct_pred != 0 or self.variant == 'true_pred':
+        #     label_spikes = [0.0]*self.n_labels
+        #     for i in range(self.n_labels):
+        #         label_spikes[i] = (s[:,i*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)
+        #     if target_spikes == max(label_spikes):
+        #         self.dopamine += self.dopamine_for_correct_pred
 
-        if self.variant == 'true_pred':
-            if target_spikes == max(label_spikes):
-                self.dopamine += target_spikes * self.dopamine_per_spike
-        else:
-            self.dopamine += target_spikes * self.dopamine_per_spike
+        # if self.variant == 'true_pred':
+        #     if target_spikes == max(label_spikes):
+        #         self.dopamine += target_spikes * self.dopamine_per_spike
+        # else:
+        #     self.dopamine += target_spikes * self.dopamine_per_spike
 
         return self.dopamine
