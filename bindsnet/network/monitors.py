@@ -10,7 +10,7 @@ from typing import Union, Optional, Iterable, Dict
 from .nodes import Nodes
 from .topology import AbstractConnection
 
-from .. import manual_seed
+from bindsnet import manual_seed
 
 
 class AbstractMonitor(ABC):

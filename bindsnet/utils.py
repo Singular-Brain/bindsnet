@@ -8,7 +8,7 @@ from numpy import ndarray
 from typing import Tuple, Union
 from torch.nn.modules.utils import _pair
 
-from .. import manual_seed
+from bindsnet import manual_seed
 
 
 def im2col_indices(

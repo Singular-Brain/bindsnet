@@ -4,7 +4,7 @@ from operator import mul
 from typing import Iterable, Optional, Union
 
 import torch
-from .. import manual_seed
+from bindsnet import manual_seed
 
 
 

@@ -1,10 +1,8 @@
 from abc import ABC
 from typing import Union, Optional, Sequence
 import warnings
-from .. import manual_seed
+from bindsnet import manual_seed
 
-
-from .. import manual_seed
 import torch
 import numpy as np
 

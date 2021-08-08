@@ -8,7 +8,7 @@ from .nodes import Nodes, CSRMNodes
 from .topology import AbstractConnection
 from ..learning.reward import AbstractReward
 
-from .. import manual_seed
+from bindsnet import manual_seed
 
 
 
