@@ -112,6 +112,7 @@ class DynamicDopamineInjection(AbstractReward):
         self.n_labels = kwargs.get('n_labels')
         self.n_per_class = kwargs.get('neuron_per_class')
         self.dopamine_per_spike = kwargs.get('dopamine_per_spike', 0.01)
+        self.negative_dopamine_per_spike = kwargs.get('dopamine_per_spike', 0.005)
         self.dopamine_for_correct_pred = kwargs.get('dopamine_for_correct_pred', 1.0)
         self.tc_reward = kwargs.get('tc_reward')
         self.dopamine_base = kwargs.get('dopamine_base', 0.002)
@@ -147,7 +148,8 @@ class DynamicDopamineInjection(AbstractReward):
         if self.label is None:
             return 0
         
-        target_spikes = self.layers[f"output_{self.label}"].s
+        target_layer = self.layers[f"output_{self.label}"]
+        target_spikes = target_layer.s
         
         self.dopamine = (
                 self.decay
@@ -160,8 +162,12 @@ class DynamicDopamineInjection(AbstractReward):
             if target_spikes.sum() == max(output_layers_spikes): 
                 self.dopamine += target_spikes.sum() * self.dopamine_per_spike
 
-        elif self.variant == "pure_per_spike":  
-            self.dopamine += target_spikes.sum() * self.dopamine_per_spike
+        elif self.variant == "pure_per_spike":
+            for layer in self.layers:
+                if layer == target_layer:
+                    self.dopamine += target_spikes.sum() * self.dopamine_per_spike
+                else:
+                    self.dopamine -= target_spikes.sum() * self.negative_dopamine_per_spike
         
         else:
             raise ValueError("variant not specified")
