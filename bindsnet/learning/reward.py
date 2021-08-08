@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from .. import manual_seed
 import torch
+from .. import manual_seed
 
 
 class AbstractReward(ABC):

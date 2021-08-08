@@ -8,6 +8,7 @@ import torch.nn.functional as F
 from torch.nn.modules.utils import _pair
 
 from bindsnet.network.nodes import Nodes, CSRMNodes
+from .. import manual_seed
 
 
 class AbstractConnection(ABC, Module):
