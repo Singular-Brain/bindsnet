@@ -161,6 +161,8 @@ class DynamicDopamineInjection(AbstractReward):
             output_layers_spikes = [self.layers[l].s.sum() for l in self.layers if l.startswith("output")]   
             if target_spikes.sum() == max(output_layers_spikes): 
                 self.dopamine += target_spikes.sum() * self.dopamine_per_spike
+            else :
+                self.dopamine += target_spikes.sum() * self.negative_dopamine_per_spike
 
         elif self.variant == "pure_per_spike":
             for name, layer in self.layers.items():
