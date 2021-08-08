@@ -10,6 +10,9 @@ from typing import Union, Optional, Iterable, Dict
 from .nodes import Nodes
 from .topology import AbstractConnection
 
+from bindsnet import manual_seed
+
+
 class AbstractMonitor(ABC):
     # language=rst
     """

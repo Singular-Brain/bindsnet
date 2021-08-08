@@ -8,6 +8,9 @@ from .nodes import Nodes, CSRMNodes
 from .topology import AbstractConnection
 from ..learning.reward import AbstractReward
 
+from bindsnet import manual_seed
+
+
 
 def load(file_name: str, map_location: str = "cpu", learning: bool = None) -> "Network":
     # language=rst

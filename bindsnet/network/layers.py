@@ -9,7 +9,7 @@ from torch.nn import Module, Parameter
 
 from .nodes import Nodes
 from .topology import AbstractConnection, Connection
-
+from bindsnet import manual_seed
 
 class MaskedConnection(Connection):
     """ """

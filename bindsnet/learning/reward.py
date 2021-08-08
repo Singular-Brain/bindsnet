@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from .. import manual_seed
 import torch
+from bindsnet import manual_seed
 
 
 class AbstractReward(ABC):
@@ -158,7 +158,7 @@ class DynamicDopamineInjection(AbstractReward):
                 ).to(target_spikes.device)
 
         if self.variant == 'true_pred': 
-            output_layers_spikes = [l.s.sum() for l in self.layers if l.startswith("output")]   
+            output_layers_spikes = [self.layers[l].s.sum() for l in self.layers if l.startswith("output")]   
             if target_spikes.sum() == max(output_layers_spikes): 
                 self.dopamine += target_spikes.sum() * self.dopamine_per_spike
 
