@@ -112,7 +112,7 @@ class DynamicDopamineInjection(AbstractReward):
         self.n_labels = kwargs.get('n_labels')
         self.n_per_class = kwargs.get('neuron_per_class')
         self.dopamine_per_spike = kwargs.get('dopamine_per_spike', 0.01)
-        self.negative_dopamine_per_spike = kwargs.get('dopamine_per_spike', 0.005)
+        self.negative_dopamine_per_spike = kwargs.get('negative_dopamine_per_spike', 0.0)
         self.dopamine_for_correct_pred = kwargs.get('dopamine_for_correct_pred', 1.0)
         self.tc_reward = kwargs.get('tc_reward')
         self.dopamine_base = kwargs.get('dopamine_base', 0.002)
