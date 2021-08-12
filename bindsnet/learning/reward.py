@@ -150,7 +150,7 @@ class DynamicDopamineInjection(AbstractReward):
             return 0
         
         if self.single_output_layer:
-            s = list(self.layers.values())[0].s
+            s = self.layers.s
             assert s.shape[0] == 1, "This method has not yet been implemented for batch_size>1 !" 
             self.dopamine = (
                             self.decay
