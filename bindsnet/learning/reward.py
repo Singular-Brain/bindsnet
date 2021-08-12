@@ -170,7 +170,7 @@ class DynamicDopamineInjection(AbstractReward):
                     pass #TODO: negative dopamine per spike
                 
             elif self.variant == "pure_per_spike":
-                self.dopamine += target_spikes * self.dopamine_for_correct_pred - (s.sum()-target_spikes) * self.negative_dopamine_per_spike
+                self.dopamine += target_spikes * self.dopamine_per_spike - (s.sum()-target_spikes) * self.negative_dopamine_per_spike
             
             else:
                 raise ValueError("variant not specified")
@@ -190,7 +190,7 @@ class DynamicDopamineInjection(AbstractReward):
                 if target_spikes.sum() == max(output_layers_spikes): 
                     self.dopamine += target_spikes.sum() * self.dopamine_per_spike
                 else :
-                    self.dopamine -= target_spikes.sum() * self.negative_dopamine_per_spike
+                    self.dopamine -= max(output_layers_spikes).sum() * self.negative_dopamine_per_spike
                     
             elif self.variant == "pure_per_spike":
                 for name, layer in self.layers.items():
