@@ -220,7 +220,7 @@ class DopaminergicRPE(AbstractReward):
         Constructor for EMA reward prediction error.
         """
         self.reward_predict = torch.tensor(1.0)  # Predicted reward (per step).
-        self.reward_predict_episode = torch.tensor(0.0)  # Predicted reward per episode.
+        self.reward_predict_episode = torch.tensor(1.0)  # Predicted reward per episode.
         self.rewards_predict_episode = (
             []
         )  # List of predicted rewards per episode (used for plotting).
