@@ -435,9 +435,11 @@ class Network(torch.nn.Module):
                 self.monitors[m].record(**kwargs)
 
         # Re-normalize connections.
+        # for c in self.connections:
+        #     self.connections[c].normalize()
         for c in self.connections:
-            self.connections[c].normalize()
-
+            self.connections[c].normalize_meh()
+            
     def reset_state_variables(self) -> None:
         # language=rst
         """
