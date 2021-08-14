@@ -243,7 +243,6 @@ class DopaminergicRPE(AbstractReward):
         self.single_output_layer = kwargs['single_output_layer']
         self.tc_reward = kwargs.get('tc_reward')
         self.dopamine_base = kwargs.get('dopamine_base', 0.002)
-        self.give_reward = kwargs['give_reward']
         dt = torch.as_tensor(self.dt)
         self.decay = torch.exp(-dt / self.tc_reward)
         self.label = kwargs.get('labels', None)
