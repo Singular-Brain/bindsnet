@@ -669,7 +669,7 @@ class LocalConnection(AbstractConnection):
         ``self.norm``.
         """
         if self.norm is not None:
-            w_sum = self.sum(0).unsqueeze(0)
+            w_sum = self.w.sum(0).unsqueeze(0)
             #w_abs_sum[w_abs_sum == 0] = 1.0
             self.w *= self.norm / w_sum
 
