@@ -236,6 +236,17 @@ class Connection(AbstractConnection):
             w_abs_sum[w_abs_sum == 0] = 1.0
             self.w *= self.norm / w_abs_sum
 
+    def normalize_meh(self) -> None:
+        # language=rst
+        """
+        Normalize weights so each target neuron has sum of connection weights equal to
+        ``self.norm``.
+        """
+        if self.norm is not None:
+            w_sum = self.sum(0).unsqueeze(0)
+            #w_abs_sum[w_abs_sum == 0] = 1.0
+            self.w *= self.norm / w_sum
+
     def reset_state_variables(self) -> None:
         # language=rst
         """
