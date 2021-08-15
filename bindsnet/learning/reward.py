@@ -227,7 +227,7 @@ class DopaminergicRPE(AbstractReward):
         )  # List of predicted rewards per episode (used for plotting).
         self.accumulated_reward = torch.tensor(1.0)
         self.variant = None
-        self.sub_variant = None
+        self.sub_variant = 'just_decay'
 
     def compute(self, **kwargs) -> torch.Tensor:
         # language=rst
@@ -253,7 +253,6 @@ class DopaminergicRPE(AbstractReward):
         self.decay = torch.exp(-dt / self.tc_reward)
         self.label = kwargs.get('labels', None)
         self.dopamine = self.dopamine_base
-        print(kwargs)
         self.variant = kwargs['variant']
         self.sub_variant == kwargs['sub_variant']
 
