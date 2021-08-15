@@ -254,12 +254,14 @@ class DopaminergicRPE(AbstractReward):
         self.variant = kwargs['variant']
 
         ### variant 4
-        # self.dps = self.dps_base - self.td_nu*(self.accumulated_reward-self.reward_predict_episode)
-        # self.negative_dps = self.negative_dps_base + self.td_nu*(self.accumulated_reward-self.reward_predict_episode)
+        self.dps = self.dps_base - self.td_nu*(self.accumulated_reward-self.reward_predict_episode)
+        print('dps:',self.dps,"dps_base:",self.dps_base)
+        print('dopamine:',self.dopamine,'dopamine_base:',self.dopamine_base)
+        self.negative_dps = self.negative_dps_base + self.td_nu*(self.accumulated_reward-self.reward_predict_episode)
 
         ### variant 1 ddps
-        self.dps = self.dps_base / self.reward_predict_episode
-        self.negative_dps = self.negative_dps_base / self.reward_predict_episode
+        # self.dps = self.dps_base / self.reward_predict_episode
+        # self.negative_dps = self.negative_dps_base / self.reward_predict_episode
 
         return self.dopamine
 
