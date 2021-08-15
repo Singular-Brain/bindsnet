@@ -251,8 +251,8 @@ class DopaminergicRPE(AbstractReward):
         self.decay = torch.exp(-dt / self.tc_reward)
         self.label = kwargs.get('labels', None)
         self.dopamine = self.dopamine_base
+        self.sub_variant == kwargs.get('sub_variant', None)
         self.variant = kwargs['variant']
-        self.sub_variant == kwargs['sub_variant']
 
         if self.sub_variant == 'just_decay':
             self.dps = self.dps_base
