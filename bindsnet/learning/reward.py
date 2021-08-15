@@ -220,12 +220,12 @@ class DopaminergicRPE(AbstractReward):
         """
         Constructor for EMA reward prediction error.
         """
-        self.reward_predict = torch.tensor(1.0)  # Predicted reward (per step).
-        self.reward_predict_episode = torch.tensor(1.0)  # Predicted reward per episode.
+        self.reward_predict = torch.tensor(0.0)  # Predicted reward (per step).
+        self.reward_predict_episode = torch.tensor(0.0)  # Predicted reward per episode.
         self.rewards_predict_episode = (
             []
         )  # List of predicted rewards per episode (used for plotting).
-
+        self.accumulated_reward = torch.tensor(0.0)
 
     def compute(self, **kwargs) -> torch.Tensor:
         # language=rst
@@ -237,6 +237,7 @@ class DopaminergicRPE(AbstractReward):
         :param Union[float, torch.Tensor] reward: Current reward.
         :return: Reward prediction error.
         """
+        self.td_nu = kwargs.get('td_nu',0.1)
         self.dps_base = kwargs.get('dopamine_per_spike_base', 0.01)
         self.layers = kwargs.get('dopaminergic_layers')
         self.n_labels = kwargs.get('n_labels')
@@ -252,9 +253,13 @@ class DopaminergicRPE(AbstractReward):
         self.dopamine = self.dopamine_base
         self.variant = kwargs['variant']
 
-        self.dps = self.dps_base / self.reward_predict_episode
-        self.negative_dps = self.negative_dps_base / self.reward_predict_episode
-        # self.dps -= self.TD_nu(self.reward_predicted - self.reward) #TODO
+        ### variant 4
+        self.dps = self.dps_base - self.td_nu(self.accumulated_reward-self.reward_predicted_episode)
+        self.negative_dps = self.negative_dps_base + self.td_nu(self.accumulated_reward-self.reward_predicted_episode)
+
+        ### variant 1 ddps
+        #self.dps = self.dps_base / self.reward_predict_episode
+        #self.negative_dps = self.negative_dps_base / self.reward_predict_episode
 
         return self.dopamine
 
@@ -272,20 +277,20 @@ class DopaminergicRPE(AbstractReward):
         :param float ema_window: Width of the averaging window.
         """
         # Get keyword arguments.
-        accumulated_reward = kwargs["accumulated_reward"]
+        self.accumulated_reward = kwargs["accumulated_reward"]
         steps = torch.tensor(kwargs["steps"]).float()
         ema_window = torch.tensor(kwargs.get("ema_window", 10.0))
 
         # Compute average reward per step.
-        reward = accumulated_reward / steps
+        self.reward = self.accumulated_reward / steps
 
         # Update EMAs.
         self.reward_predict = (
             1 - 1 / ema_window
-        ) * self.reward_predict + 1 / ema_window * reward
+        ) * self.reward_predict + 1 / ema_window * self.reward
         self.reward_predict_episode = (
             1 - 1 / ema_window
-        ) * self.reward_predict_episode + 1 / ema_window * accumulated_reward
+        ) * self.reward_predict_episode + 1 / ema_window * self.accumulated_reward
         self.rewards_predict_episode.append(self.reward_predict_episode.item())
 
 
