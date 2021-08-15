@@ -237,7 +237,7 @@ class DopaminergicRPE(AbstractReward):
         :param Union[float, torch.Tensor] reward: Current reward.
         :return: Reward prediction error.
         """
-        self.td_nu = kwargs.get('td_nu',0.1)
+        self.td_nu = kwargs.get('td_nu',0.001)
         self.dps_base = kwargs.get('dopamine_per_spike_base', 0.01)
         self.layers = kwargs.get('dopaminergic_layers')
         self.n_labels = kwargs.get('n_labels')
