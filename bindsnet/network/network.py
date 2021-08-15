@@ -438,7 +438,7 @@ class Network(torch.nn.Module):
         # for c in self.connections:
         #     self.connections[c].normalize()
         for c in self.connections:
-            self.connections[c].normalize_meh()
+            self.connections[c].normalize()
             
     def reset_state_variables(self) -> None:
         # language=rst
