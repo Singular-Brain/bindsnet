@@ -252,14 +252,21 @@ class DopaminergicRPE(AbstractReward):
         self.label = kwargs.get('labels', None)
         self.dopamine = self.dopamine_base
         self.variant = kwargs['variant']
+        self.sub_variant == kwargs['sub_variant']
 
-        ### variant 4
-        self.dps = self.dps_base - self.td_nu*(self.accumulated_reward-self.reward_predict_episode)
-        self.negative_dps = self.negative_dps_base + self.td_nu*(self.accumulated_reward-self.reward_predict_episode)
+        if self.sub_variant == 'just_decay':
+            self.dps = self.dps_base
+            self.negative_dps = self.negative_dps_base
 
-        ### variant 1 ddps
-        # self.dps = self.dps_base / self.reward_predict_episode
-        # self.negative_dps = self.negative_dps_base / self.reward_predict_episode
+        elif self.sub_variant == 'normal':
+            self.dps = self.dps_base / self.reward_predict_episode
+            self.negative_dps = self.negative_dps_base / self.reward_predict_episode
+        elif self.sub_variant == 'td_error':
+            self.dps = self.dps_base - self.td_nu*(self.accumulated_reward-self.reward_predict_episode)
+            self.negative_dps = self.negative_dps_base + self.td_nu*(self.accumulated_reward-self.reward_predict_episode)
+        else:
+            raise ValueError('sub_variant not specified!')
+
 
         return self.dopamine
 
