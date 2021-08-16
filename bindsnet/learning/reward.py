@@ -261,7 +261,9 @@ class DopaminergicRPE(AbstractReward):
         self.dopamine = self.dopamine_base
         self.variant = kwargs['variant']
         self.sub_variant = kwargs['sub_variant']
-
+        self.dps = self.dps_base
+        self.negative_dps = self.negative_dps_base
+        
         if self.sub_variant == 'just_decay':
             self.dps = self.dps_base
             self.negative_dps = self.negative_dps_base
