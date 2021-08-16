@@ -173,7 +173,7 @@ class DynamicDopamineInjection(AbstractReward):
                     label_spikes[i] = (s[:,i*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)
                 r = self.dopamine_per_spike*target_spikes
                 expected_r = self.dopamine_per_spike*sum(label_spikes)
-                self.dopamine =  self.dopamine + self.learning_rate*(r-self.gamma*expected_r)
+                self.dopamine =  self.dopamine + self.alpha*(r-self.gamma*expected_r)
 
 
 
