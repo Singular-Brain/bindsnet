@@ -267,8 +267,10 @@ class DopaminergicRPE(AbstractReward):
             self.negative_dps = self.negative_dps_base
 
         elif self.sub_variant == 'normal':
-            self.dps = self.dps_base / self.reward_predict_episode_pos
-            self.negative_dps = self.negative_dps_base / self.reward_predict_episode_neg
+            if self.accumulated_reward > 0 :
+                self.dps = self.dps_base / self.reward_predict_episode_pos
+            else :
+                self.negative_dps = self.negative_dps_base / self.reward_predict_episode_neg
         
         elif self.sub_variant == 'td_error':
             if self.accumulated_reward > 0 :
