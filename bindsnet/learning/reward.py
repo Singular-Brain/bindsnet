@@ -227,7 +227,6 @@ class DopaminergicRPE(AbstractReward):
         )  # List of predicted rewards per episode (used for plotting).
         self.accumulated_reward = torch.tensor(1.0)
         self.variant = None
-        self.sub_variant = 'just_decay'
 
     def compute(self, **kwargs) -> torch.Tensor:
         # language=rst
@@ -241,12 +240,12 @@ class DopaminergicRPE(AbstractReward):
         """
         self.td_nu = kwargs.get('td_nu',0.001)
         self.dps_base = kwargs.get('dopamine_per_spike_base', 0.01)
+        self.negative_dps_base = kwargs.get('negative_dopamine_per_spike_base', 0.0)
         self.layers = kwargs.get('dopaminergic_layers')
         self.n_labels = kwargs.get('n_labels')
         self.n_per_class = kwargs.get('neuron_per_class')
         self.single_output_layer = kwargs['single_output_layer']
         self.tc_reward = kwargs.get('tc_reward')
-        self.negative_dps_base = kwargs.get('negative_dopamine_per_spike_base', 0.0)
         self.dopamine_for_correct_pred = kwargs.get('dopamine_for_correct_pred', 1.0)
         self.dopamine_base = kwargs.get('dopamine_base', 0.002)
         dt = torch.as_tensor(self.dt)
@@ -254,8 +253,7 @@ class DopaminergicRPE(AbstractReward):
         self.label = kwargs.get('labels', None)
         self.dopamine = self.dopamine_base
         self.variant = kwargs['variant']
-        self.sub_variant == kwargs['sub_variant']
-
+        self.sub_variant = kwargs['sub_variant']
 
         if self.sub_variant == 'just_decay':
             self.dps = self.dps_base
@@ -264,9 +262,11 @@ class DopaminergicRPE(AbstractReward):
         elif self.sub_variant == 'normal':
             self.dps = self.dps_base / self.reward_predict_episode
             self.negative_dps = self.negative_dps_base / self.reward_predict_episode
+        
         elif self.sub_variant == 'td_error':
             self.dps = self.dps_base - self.td_nu*(self.accumulated_reward-self.reward_predict_episode)
             self.negative_dps = self.negative_dps_base + self.td_nu*(self.accumulated_reward-self.reward_predict_episode)
+        
         else:
             raise ValueError('sub_variant not specified!')
 
