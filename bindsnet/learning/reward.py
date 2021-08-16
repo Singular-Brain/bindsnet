@@ -222,9 +222,16 @@ class DopaminergicRPE(AbstractReward):
         """
         self.reward_predict = torch.tensor(1.0)  # Predicted reward (per step).
         self.reward_predict_episode = torch.tensor(1.0)  # Predicted reward per episode.
-        self.rewards_predict_episode = (
-            []
-        )  # List of predicted rewards per episode (used for plotting).
+        self.rewards_predict_episode = ([])  # List of predicted rewards per episode (used for plotting).\
+
+        self.reward_predict_pos = torch.tensor(1.0)  # Predicted reward (per step).
+        self.reward_predict_episode_pos = torch.tensor(1.0)  # Predicted reward per episode.
+        self.rewards_predict_episode_pos = ([])  # List of predicted rewards per episode (used for plotting).
+        
+        self.reward_predict_neg = torch.tensor(1.0)  # Predicted reward (per step).
+        self.reward_predict_episode_neg = torch.tensor(1.0)  # Predicted reward per episode.
+        self.rewards_predict_episode_neg = ([])  # List of predicted rewards per episode (used for plotting).
+        
         self.accumulated_reward = torch.tensor(1.0)
         self.variant = None
 
@@ -260,12 +267,14 @@ class DopaminergicRPE(AbstractReward):
             self.negative_dps = self.negative_dps_base
 
         elif self.sub_variant == 'normal':
-            self.dps = self.dps_base / self.reward_predict_episode
-            self.negative_dps = self.negative_dps_base / self.reward_predict_episode
+            self.dps = self.dps_base / self.reward_predict_episode_pos
+            self.negative_dps = self.negative_dps_base / self.reward_predict_episode_neg
         
         elif self.sub_variant == 'td_error':
-            self.dps = self.dps_base - self.td_nu*(self.accumulated_reward-self.reward_predict_episode)
-            self.negative_dps = self.negative_dps_base + self.td_nu*(self.accumulated_reward-self.reward_predict_episode)
+            if self.accumulated_reward > 0 :
+                self.dps = self.dps_base - self.td_nu*(self.accumulated_reward-self.reward_predict_episode_pos)
+            else :
+                self.negative_dps = self.negative_dps_base + self.td_nu*(self.accumulated_reward-self.reward_predict_episode_neg)
         
         else:
             raise ValueError('sub_variant not specified!')
@@ -302,6 +311,18 @@ class DopaminergicRPE(AbstractReward):
             1 - 1 / ema_window
         ) * self.reward_predict_episode + 1 / ema_window * self.accumulated_reward
         self.rewards_predict_episode.append(self.reward_predict_episode.item())
+
+        if self.accumulated_reward > 0 :
+            self.reward_pos = self.accumulated_reward / steps
+            self.reward_predict_pos = (1 - 1 / ema_window) * self.reward_predict_pos + 1 / ema_window * self.reward_pos
+            self.reward_predict_episode_pos = (1 - 1 / ema_window) * self.reward_predict_episode_pos + 1 / ema_window * self.accumulated_reward
+            self.rewards_predict_episode_pos.append(self.reward_predict_episode_pos.item()) 
+        
+        else:
+            self.reward_neg = self.accumulated_reward / steps
+            self.reward_predict_neg = (1 - 1 / ema_window) * self.reward_predict_neg + 1 / ema_window * self.reward_neg
+            self.reward_predict_episode_neg = (1 - 1 / ema_window) * self.reward_predict_episode_neg + 1 / ema_window * self.accumulated_reward
+            self.rewards_predict_episode_neg.append(self.reward_predict_episode_neg.item())             
 
 
     def online_compute(self, **kwargs) -> None:
