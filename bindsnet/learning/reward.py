@@ -124,6 +124,11 @@ class DynamicDopamineInjection(AbstractReward):
         self.decay = torch.exp(-dt / self.tc_reward)
 
         self.variant = kwargs['variant']
+        
+        if self.variant == kwargs['variant']:
+            self.alpha = kwargs['alpha']
+            self.gamma = kwargs['gamma']
+
 
         self.label = kwargs.get('labels', None)
 
@@ -162,7 +167,17 @@ class DynamicDopamineInjection(AbstractReward):
 
             target_spikes = (s[:,self.label*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)                
 
-            if self.variant == 'true_pred':
+            if self.variant == 'rl_td':
+                label_spikes = [0]*self.n_labels
+                for i in range(self.n_labels):
+                    label_spikes[i] = (s[:,i*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)
+                r = self.dopamine_per_spike*sum(target_spikes)
+                expected_r = self.dopamine_per_spike*sum(label_spikes)
+                self.dopamine =  self.dopamine + self.learning_rate*(r-self.gamma*expected_r)
+
+
+
+            elif self.variant == 'true_pred':
                 label_spikes = [0.0]*self.n_labels
                 for i in range(self.n_labels):
                     label_spikes[i] = (s[:,i*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)
