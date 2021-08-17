@@ -420,9 +420,15 @@ class Network(torch.nn.Module):
 
             # Run synapse updates.
             for c in self.connections:
+                if kwargs['pre_observation'] == True:
+                    if t < kwargs['observation_period']:
+                        if c.target.startswith("output"):
+                            self.learning = False
+                            print('hi')
                 self.connections[c].update(
                     mask=masks.get(c, None), learning=self.learning, **kwargs
                 )
+                self.learning = True
 
             # # Get input to all layers.
             # current_inputs.update(self._get_inputs())
