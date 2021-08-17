@@ -98,9 +98,10 @@ class AbstractConnection(ABC, Module):
         :param ByteTensor mask: Boolean mask determining which weights to clamp to zero.
         """
         learning = kwargs.get("learning", True)
+        self.label = kwargs.get('labels', None)
 
         if learning:
-            self.update_rule.update(**kwargs)
+            self.update_rule.update(self.label,**kwargs)
 
         mask = kwargs.get("mask", None)
         if mask is not None:
