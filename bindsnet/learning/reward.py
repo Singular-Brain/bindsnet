@@ -125,7 +125,7 @@ class DynamicDopamineInjection(AbstractReward):
 
         self.variant = kwargs['variant']
         
-        if self.variant == kwargs['variant']:
+        if self.variant == 'rl_td':
             self.alpha = kwargs['alpha']
             self.gamma = kwargs['gamma']
 
