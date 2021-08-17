@@ -166,7 +166,10 @@ class DynamicDopamineInjection(AbstractReward):
             ).to(s.device)
 
             target_spikes = (s[:,self.label*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)                
-            
+
+            label_spikes = [0.0]*self.n_labels
+            for i in range(self.n_labels):
+                label_spikes[i] = (s[:,i*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)
             if self.variant == 'rl_td':
                 label_spikes = [0]*self.n_labels
                 for i in range(self.n_labels):
@@ -176,11 +179,8 @@ class DynamicDopamineInjection(AbstractReward):
                 self.dopamine =  self.dopamine + self.alpha*(r-self.gamma*expected_r)
 
 
-
             elif self.variant == 'true_pred':
-                label_spikes = [0.0]*self.n_labels
-                for i in range(self.n_labels):
-                    label_spikes[i] = (s[:,i*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)
+                
                 if target_spikes == max(label_spikes):
                     self.dopamine += target_spikes * self.dopamine_per_spike
                 else:
@@ -188,7 +188,8 @@ class DynamicDopamineInjection(AbstractReward):
 
                 
             elif self.variant == "pure_per_spike":
-                self.dopamine += target_spikes * self.dopamine_per_spike - (s.sum()-target_spikes) * self.negative_dopamine_per_spike
+                #self.dopamine += target_spikes * self.dopamine_per_spike - (s.sum()-target_spikes) * self.negative_dopamine_per_spike
+                self.dopamine += target_spikes * self.dopamine_per_spike - max(label_spikes) * self.negative_dopamine_per_spike
             
             else:
                 raise ValueError("variant not specified")
