@@ -766,9 +766,12 @@ class MSTDPET(LearningRule):
                 *self.connection.w.shape, device=self.connection.w.device
             )
 
+        self.label = kwargs['label']
         # Reshape pre- and post-synaptic spikes.
         source_s = self.source.s.view(-1).float().to(self.connection.w.device)
         target_s = self.target.s.view(-1).float().to(self.connection.w.device)
+
+        #TODO mask the selected group
 
         # Parse keyword arguments.
         reward = kwargs["reward"]
