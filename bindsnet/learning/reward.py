@@ -166,7 +166,6 @@ class DynamicDopamineInjection(AbstractReward):
             ).to(s.device)
 
             target_spikes = (s[:,self.label*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)                
-            print(target_spikes)
             
             if self.variant == 'rl_td':
                 label_spikes = [0]*self.n_labels
