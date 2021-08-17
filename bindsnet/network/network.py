@@ -422,7 +422,7 @@ class Network(torch.nn.Module):
             for c in self.connections:
                 if kwargs['pre_observation'] == True:
                     if t < kwargs['observation_period']:
-                        if c.target.startswith("output"):
+                        if c[1].startswith("output"):
                             self.learning = False
                             print('hi')
                 self.connections[c].update(
