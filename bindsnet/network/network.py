@@ -424,7 +424,6 @@ class Network(torch.nn.Module):
                     if t < kwargs['observation_period']:
                         if c[1].startswith("output"):
                             self.learning = False
-                            print(c[1])
                 self.connections[c].update(
                     mask=masks.get(c, None), learning=self.learning, **kwargs
                 )
