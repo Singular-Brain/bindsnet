@@ -772,7 +772,7 @@ class MSTDPET(LearningRule):
                 *self.connection.w.shape, device=self.connection.w.device
             )
 
-        print(**kwargs)
+        print(kwargs)
         # self.pred_label = kwargs['pred_label']
         # self.local_rewarding = kwargs['local_rewarding']
 
