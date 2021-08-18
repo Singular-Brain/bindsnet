@@ -81,9 +81,10 @@ class LearningRule(ABC):
         """
         Abstract method for a learning rule update.
         """
-        if kwargs['local_rewarding'] == True:
-            self.pred_label = kwargs['pred_label']
-            print(self.connection.w.shape)
+        
+        print(self.connection.w.shape)
+        print(self.pred_label)
+        print(self.local_rewarding)
         # Implement weight decay.
         if self.weight_decay:
             self.connection.w *= self.weight_decay
@@ -769,8 +770,10 @@ class MSTDPET(LearningRule):
                 *self.connection.w.shape, device=self.connection.w.device
             )
 
-        self.label = kwargs['true_label']
-        print(kwargs["local_rewarding"], 'm')
+        self.label = kwargs['pred_label']
+        self.local_rewarding = kwargs['local_rewarding']
+        print(self.label)
+        print(self.local_rewarding)
 
         # Reshape pre- and post-synaptic spikes.
         source_s = self.source.s.view(-1).float().to(self.connection.w.device)

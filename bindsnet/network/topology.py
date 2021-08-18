@@ -98,7 +98,6 @@ class AbstractConnection(ABC, Module):
         :param ByteTensor mask: Boolean mask determining which weights to clamp to zero.
         """
         learning = kwargs.get("learning", True)
-        print(kwargs["local_rewarding"], 'h')
         if learning:
             self.update_rule.update(**kwargs)
 
