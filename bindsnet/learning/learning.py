@@ -780,8 +780,6 @@ class MSTDPET(LearningRule):
         source_s = self.source.s.view(-1).float().to(self.connection.w.device)
         target_s = self.target.s.view(-1).float().to(self.connection.w.device)
 
-        #TODO mask the selected group
-
         # Parse keyword arguments.
         reward = kwargs["reward"]
         a_plus = torch.tensor(
@@ -805,7 +803,7 @@ class MSTDPET(LearningRule):
                 self.nu[0] * self.connection.dt * reward * self.eligibility_trace
             )
         else:
-            self.connection.w += self.pred_label_mask*(
+            self.connection.w += (
                 self.nu[0] * self.connection.dt * reward * self.eligibility_trace
             )
 

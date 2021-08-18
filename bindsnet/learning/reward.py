@@ -132,13 +132,13 @@ class DynamicDopamineInjection(AbstractReward):
         self.punish_base = kwargs.get('punishment_base', 0.0)
         
         self.td_nu = kwargs.get('td_nu',0.0001)
-        dt = torch.as_tensor(self.dt)
+        dt = torch.as_tensor(self.dt) 
         self.tc_reward = kwargs.get('tc_reward')
         self.decay = torch.exp(-dt / self.tc_reward)
-        print('tc_reward, decay',self.tc_reward,self.decay)
-        self.tc_dps = kwargs.get('tc_dps')
-        self.decay_dps = torch.exp(-dt / self.tc_dps)
-        self.dps_factor = kwargs.get('dps_factor')
+        self.tc_dps = kwargs.get('tc_dps', None)
+        if self.tc_dps is not None:
+            self.decay_dps = torch.exp(-dt / self.tc_dps)
+        self.dps_factor = kwargs.get('dps_factor',0)
 
         self.dps = self.rew_base
         self.neg_dps = self.punish_base
@@ -175,14 +175,14 @@ class DynamicDopamineInjection(AbstractReward):
                 if self.give_reward:
                     if self.label == kwargs['pred_label']:
                         self.dopamine = self.rew_base
-                        self.rew_base = self.rew_base - (self.dps_factor * self.dps)
-                        self.punish_base = self.punish_base + (self.dps_factor * self.neg_dps)
+                        self.rew_base =  (1 - self.dps_factor) * self.rew_base
+                        self.punish_base = (1 + self.dps_factor) * self.punish_base
                     else:
                         self.dopamine = self.punish_base
-                        self.rew_base = self.rew_base + (self.dps_factor * self.dps)
-                        self.punish_base = self.punish_base - (self.dps_factor * self.neg_dps)
+                        self.rew_base = (1 + self.dps_factor) * self.rew_base
+                        self.punish_base = (1 - self.dps_factor) * self.punish_base
                 else: 
-                    self.rew_base = self.decay_dps * (self.rew_base - self.dps) + self.dps
+                    self.rew_base = self.decay_dps * (self.rew_base - self.dps) + self.dps # self.dps = initial value of rew_base
                     self.punish_base = self.decay_dps * (self.punish_base - self.neg_dps) + self.neg_dps
                     
             elif self.variant == 'true_pred' or self.variant == 'pure_per_spike':
@@ -213,10 +213,10 @@ class DynamicDopamineInjection(AbstractReward):
         ema_window = torch.tensor(kwargs.get("ema_window", 10.0))
 
         # Compute average reward per step.
-        self.reward = self.accumulated_reward / steps
+        # self.reward = self.accumulated_reward / steps
 
         # Update EMAs.
-        self.reward_predict = (1 - 1 / ema_window) * self.reward_predict + 1 / ema_window * self.reward
+        # self.reward_predict = (1 - 1 / ema_window) * self.reward_predict + 1 / ema_window * self.reward
         self.reward_predict_episode = (1 - 1 / ema_window) * self.reward_predict_episode + 1 / ema_window * self.accumulated_reward
         self.rewards_predict_episode.append(self.reward_predict_episode.item())
 
