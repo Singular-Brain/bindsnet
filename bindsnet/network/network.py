@@ -339,7 +339,6 @@ class Network(torch.nn.Module):
         # Compute reward.
         if self.reward_fn is not None:
             kwargs["reward"] = self.reward_fn.compute(**kwargs)
-            print('offline',kwargs['reward'])
 
         # Dynamic setting of batch size.
         if inputs != {}:
@@ -443,8 +442,6 @@ class Network(torch.nn.Module):
 
             if self.reward_fn is not None and self.online == True and t>=self.observation_period + self.decision_period:
                 kwargs["reward"] = self.reward_fn.online_compute(**kwargs)
-                print('online',kwargs['reward'])
-
 
             # Record state variables of interest.
             for m in self.monitors:
