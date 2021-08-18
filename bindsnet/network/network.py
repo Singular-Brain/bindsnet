@@ -374,14 +374,14 @@ class Network(torch.nn.Module):
         for t in range(timesteps):
 
             # Make a decision and compute reward
-            if self.local_rewarding == True and t == kwargs['observation_period']+kwargs['decision_period']:
+            if self.has_decision_period and t == kwargs['observation_period']+kwargs['decision_period']:
                 out_spikes = self.spikes["output"].get("s").view(self.time, self.n_classes, self.neuron_per_class)
                 sum_spikes = out_spikes[self.observation_period:self.time-self.learning_period,:,:].sum(0).sum(1)
                 pred_label = torch.argmax(sum_spikes)
                 if pred_label == self.true_label:
-                    kwargs["reward"] = self.local_reward_dopamine
+                    kwargs["reward"] = self.scalar_reward
                 else:
-                    kwargs["reward"] = -self.local_reward_dopamine
+                    kwargs["reward"] = -self.scalar_reward
 
             # Get input to all layers (synchronous mode).
             current_inputs = {}
@@ -431,18 +431,8 @@ class Network(torch.nn.Module):
 
             # Run synapse updates.
             for c in self.connections:
-                if kwargs['pre_observation'] == True and t < kwargs['observation_period'] and c[1].startswith("output"):
-                    self.connections[c].update(
-                        mask=masks.get(c, None), learning=False, **kwargs
-                        )
-                elif (kwargs['has_decision_period'] == True or kwargs['local_rewarding'] == True) and t < kwargs['decision_period']+kwargs['observation_period'] and c[1].startswith("output"):
-                    self.connections[c].update(
-                        mask=masks.get(c, None), learning=False, **kwargs
-                        )
-                elif kwargs['local_rewarding'] == True and t>=kwargs['decision_period']+kwargs['observation_period'] and c[1].startswith("output"):
-                    self.connections[c].update(
-                        mask=masks.get(c, None), learning=False, labels = self.pred_label, **kwargs
-                        )
+                if t < kwargs["observation_period"] + kwargs["decision_period"]:
+                    pass 
                 else:
                     self.connections[c].update(
                         mask=masks.get(c, None), learning=self.learning, **kwargs
@@ -451,9 +441,8 @@ class Network(torch.nn.Module):
             # # Get input to all layers.
             # current_inputs.update(self._get_inputs())
 
-            if self.reward_fn is not None and self.online == True and t>=kwargs['observation_period']:
-                if  kwargs['has_decision_period']==False or (kwargs['has_decision_period']==True and t>=kwargs['observation_period']+kwargs['observation_period']) :
-                    kwargs["reward"] = self.reward_fn.online_compute(**kwargs)
+            if self.reward_fn is not None and self.online == True and t>=kwargs['observation_period'] + kwargs["decision_period"]:
+                kwargs["reward"] = self.reward_fn.online_compute(**kwargs)
 
             # Record state variables of interest.
             for m in self.monitors:
