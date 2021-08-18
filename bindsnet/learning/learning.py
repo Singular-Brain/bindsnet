@@ -76,11 +76,14 @@ class LearningRule(ABC):
         # Weight decay.
         self.weight_decay = 1.0 - weight_decay if weight_decay else 1.0
 
-    def update(self) -> None:
+    def update(self, **kwargs) -> None:
         # language=rst
         """
         Abstract method for a learning rule update.
         """
+        if kwargs['local_rewarding'] == True:
+            self.mask_label = kwargs['pred_label']
+
         # Implement weight decay.
         if self.weight_decay:
             self.connection.w *= self.weight_decay
