@@ -130,7 +130,7 @@ class DynamicDopamineInjection(AbstractReward):
             self.gamma = kwargs['gamma']
 
 
-        self.label = kwargs.get('labels', None)
+        self.label = kwargs.get('true_label', None)
 
         self.dopamine = self.dopamine_base
         if self.give_reward: 
@@ -154,7 +154,7 @@ class DynamicDopamineInjection(AbstractReward):
         """
         # assert s.shape[0] == 1, "This method has not yet been implemented for batch_size>1 !" 
         if self.label is None:
-            return 0
+            return 0.0
         
         if self.single_output_layer:
             s = self.layers.s
