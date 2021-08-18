@@ -770,6 +770,8 @@ class MSTDPET(LearningRule):
             )
 
         self.label = kwargs['true_label']
+        print(kwargs["local_rewarding"], 'm')
+
         # Reshape pre- and post-synaptic spikes.
         source_s = self.source.s.view(-1).float().to(self.connection.w.device)
         target_s = self.target.s.view(-1).float().to(self.connection.w.device)
