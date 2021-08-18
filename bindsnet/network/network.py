@@ -338,6 +338,7 @@ class Network(torch.nn.Module):
         kwargs['pred_label'] = None
         kwargs['local_rewarding'] = self.local_rewarding
         # Compute reward.
+        kwargs['give_reward'] = False
         if self.reward_fn is not None:
             kwargs["reward"] = self.reward_fn.compute(**kwargs)
 
@@ -381,6 +382,9 @@ class Network(torch.nn.Module):
                     sum_spikes = out_spikes[self.observation_period:self.time-self.decision_period,:,:].sum(0).sum(1)
                     kwargs['pred_label'] = torch.argmax(sum_spikes)
                     kwargs['true_label'] = self.true_label
+                    kwargs['give_reward'] = True
+                    #TODO: if you want per spike modulation, pls calculate rew_base and punish_base
+                    assert kwargs['sub_variant'] == 'scalar', "the subvariant must be scalar"
                     kwargs["reward"] = self.reward_fn.compute(**kwargs)
 
             # Get input to all layers (synchronous mode).
