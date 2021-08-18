@@ -75,6 +75,7 @@ class LearningRule(ABC):
         self.pred_label = None
         self.pred_label_mask = None
         self.local_rewarding = None
+        self.neuron_per_class = None
 
         # Weight decay.
         self.weight_decay = 1.0 - weight_decay if weight_decay else 1.0
@@ -772,6 +773,7 @@ class MSTDPET(LearningRule):
 
         self.pred_label = kwargs['pred_label']
         self.local_rewarding = kwargs['local_rewarding']
+        self.neuron_per_class = kwargs['neuron_per_class']
 
 
         # Reshape pre- and post-synaptic spikes.
