@@ -335,6 +335,7 @@ class Network(torch.nn.Module):
         masks = kwargs.get("masks", {})
         injects_v = kwargs.get("injects_v", {})
         self.true_label = kwargs.get('true_label', None)
+        kwargs['pred_label'] = None
         kwargs['local_rewarding'] = self.local_rewarding
         # Compute reward.
         if self.reward_fn is not None:
