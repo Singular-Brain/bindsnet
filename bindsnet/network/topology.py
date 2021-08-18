@@ -649,7 +649,7 @@ class LocalConnection(AbstractConnection):
         """
         if kwargs["mask"] is None:
             kwargs["mask"] = self.mask
-
+        print(kwargs["local_rewarding"])
         super().update(**kwargs)
 
     def normalize(self) -> None:
