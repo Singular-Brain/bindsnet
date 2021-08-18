@@ -441,6 +441,7 @@ class Network(torch.nn.Module):
             # current_inputs.update(self._get_inputs())
 
             if self.reward_fn is not None and self.online == True and t>=self.observation_period + self.decision_period:
+                print('*')
                 kwargs["reward"] = self.reward_fn.online_compute(**kwargs)
 
             # Record state variables of interest.
