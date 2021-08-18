@@ -112,7 +112,6 @@ class DynamicDopamineInjection(AbstractReward):
         self.reward_predict_episode = torch.tensor(0.0)  # Predicted reward per episode.
         self.rewards_predict_episode = ([])  # List of predicted rewards per episode (used for plotting).\
         self.accumulated_reward = torch.tensor(0.0)
-        self.variant = None
     
     def compute(self, **kwargs) -> None:
         # language=rst
@@ -128,7 +127,7 @@ class DynamicDopamineInjection(AbstractReward):
         self.sub_variant = kwargs['sub_variant']
         self.give_reward = kwargs['give_reward']
         
-        self.dopamine_base = kwargs.get('dopamine_base', 0.002)
+        self.dopamine_base = kwargs.get('dopamine_base', 0.0)
         self.rew_base = kwargs.get('reward_base', 0.01)
         self.punish_base = kwargs.get('punishment_base', 0.0)
         
@@ -136,6 +135,7 @@ class DynamicDopamineInjection(AbstractReward):
         dt = torch.as_tensor(self.dt)
         self.tc_reward = kwargs.get('tc_reward')
         self.decay = torch.exp(-dt / self.tc_reward)
+        print('tc_reward, decay',self.tc_reward,self.decay)
         self.tc_dps = kwargs.get('tc_dps')
         self.decay_dps = torch.exp(-dt / self.tc_dps)
         self.dps_factor = kwargs.get('dps_factor')
