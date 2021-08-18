@@ -339,6 +339,7 @@ class Network(torch.nn.Module):
         # Compute reward.
         if self.reward_fn is not None:
             kwargs["reward"] = self.reward_fn.compute(**kwargs)
+            print('offline',kwargs['reward'])
 
         # Dynamic setting of batch size.
         if inputs != {}:
@@ -376,6 +377,7 @@ class Network(torch.nn.Module):
             # Make a decision and compute reward
             if  self.online == False:
                 if (self.has_decision_period and t == self.observation_period+self.decision_period):
+                    print('*')
                     out_spikes = self.spikes["output"].get("s").view(self.time, self.n_classes, self.neuron_per_class)
                     sum_spikes = out_spikes[self.observation_period:self.time-self.learning_period,:,:].sum(0).sum(1)
                     kwargs['pred_label'] = torch.argmax(sum_spikes)
@@ -442,6 +444,8 @@ class Network(torch.nn.Module):
 
             if self.reward_fn is not None and self.online == True and t>=self.observation_period + self.decision_period:
                 kwargs["reward"] = self.reward_fn.online_compute(**kwargs)
+                print('online',kwargs['reward'])
+
 
             # Record state variables of interest.
             for m in self.monitors:
