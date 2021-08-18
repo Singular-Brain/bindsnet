@@ -72,6 +72,8 @@ class LearningRule(ABC):
                 self.reduction = torch.sum
         else:
             self.reduction = reduction
+        self.pred_label = None
+        self.local_rewarding = None
 
         # Weight decay.
         self.weight_decay = 1.0 - weight_decay if weight_decay else 1.0
@@ -81,7 +83,7 @@ class LearningRule(ABC):
         """
         Abstract method for a learning rule update.
         """
-        
+        print(self.target)
         print(self.connection.w.shape)
         print(self.pred_label)
         print(self.local_rewarding)
@@ -770,10 +772,8 @@ class MSTDPET(LearningRule):
                 *self.connection.w.shape, device=self.connection.w.device
             )
 
-        self.label = kwargs['pred_label']
+        self.pred_label = kwargs['pred_label']
         self.local_rewarding = kwargs['local_rewarding']
-        print(self.label)
-        print(self.local_rewarding)
 
         # Reshape pre- and post-synaptic spikes.
         source_s = self.source.s.view(-1).float().to(self.connection.w.device)
