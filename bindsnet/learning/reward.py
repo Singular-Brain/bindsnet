@@ -354,56 +354,56 @@ class DopaminergicRPE(AbstractReward):
         if self.label is None:
             return 0
         
-        if self.single_output_layer:
-            s = self.layers.s
-            assert s.shape[0] == 1, "This method has not yet been implemented for batch_size>1 !" 
-            self.dopamine = (
-                            self.decay
-                            * (self.dopamine - self.dopamine_base)
-                            + self.dopamine_base
-            ).to(s.device)
-            target_spikes = (s[:,self.label*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)                
-            #self.dopamine += target_spikes * self.dps #- (s.sum()-target_spikes) * self.negative_dopamine_per_spike
-        
-            if self.variant == 'true_pred':
-                label_spikes = [0.0]*self.n_labels
-                for i in range(self.n_labels):
-                    label_spikes[i] = (s[:,i*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)
-                if target_spikes == max(label_spikes):
-                    self.dopamine += target_spikes * self.dps
-                else:
-                    self.dopamine -= max(label_spikes) * self.negative_dps
-            elif self.variant == "pure_per_spike":
-                self.dopamine += target_spikes * self.dps - (s.sum()-target_spikes) * self.negative_dps
+        #if self.single_output_layer:
+        s = self.layers.s
+        assert s.shape[0] == 1, "This method has not yet been implemented for batch_size>1 !" 
+        self.dopamine = (
+                        self.decay
+                        * (self.dopamine - self.dopamine_base)
+                        + self.dopamine_base
+        ).to(s.device)
+        target_spikes = (s[:,self.label*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)                
+        #self.dopamine += target_spikes * self.dps #- (s.sum()-target_spikes) * self.negative_dopamine_per_spike
+        print(target_spikes)
+        if self.variant == 'true_pred':
+            label_spikes = [0.0]*self.n_labels
+            for i in range(self.n_labels):
+                label_spikes[i] = (s[:,i*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)
+            if target_spikes == max(label_spikes):
+                self.dopamine += target_spikes * self.dps
             else:
-                raise ValueError("variant not specified")
-        
-        
+                self.dopamine -= max(label_spikes) * self.negative_dps
+        elif self.variant == "pure_per_spike":
+            self.dopamine += target_spikes * self.dps - (s.sum()-target_spikes) * self.negative_dps
         else:
-            target_layer = self.layers[f"output_{self.label}"]
-            target_spikes = target_layer.s
+            raise ValueError("variant not specified")
+    
+        
+        # else:
+        #     target_layer = self.layers[f"output_{self.label}"]
+        #     target_spikes = target_layer.s
             
-            self.dopamine = (
-                    self.decay
-                    * (self.dopamine - self.dopamine_base)
-                    + self.dopamine_base
-                    ).to(target_spikes.device)
+        #     self.dopamine = (
+        #             self.decay
+        #             * (self.dopamine - self.dopamine_base)
+        #             + self.dopamine_base
+        #             ).to(target_spikes.device)
 
-            if self.variant == 'true_pred':
-                output_layers_spikes = [self.layers[l].s.sum() for l in self.layers if l.startswith("output")]   
-                if target_spikes.sum() == max(output_layers_spikes): 
-                    self.dopamine += target_spikes.sum() * self.dps
-                else :
-                    self.dopamine -= max(output_layers_spikes).sum() * self.negative_dps
+        #     if self.variant == 'true_pred':
+        #         output_layers_spikes = [self.layers[l].s.sum() for l in self.layers if l.startswith("output")]   
+        #         if target_spikes.sum() == max(output_layers_spikes): 
+        #             self.dopamine += target_spikes.sum() * self.dps
+        #         else :
+        #             self.dopamine -= max(output_layers_spikes).sum() * self.negative_dps
                     
-            elif self.variant == "pure_per_spike":
-                for name, layer in self.layers.items():
-                    if layer == target_layer:
-                        self.dopamine += layer.s.sum() * self.dps
-                    else:
-                        self.dopamine -= layer.s.sum() * self.negative_dps
+        #     elif self.variant == "pure_per_spike":
+        #         for name, layer in self.layers.items():
+        #             if layer == target_layer:
+        #                 self.dopamine += layer.s.sum() * self.dps
+        #             else:
+        #                 self.dopamine -= layer.s.sum() * self.negative_dps
             
-            else:
-                raise ValueError("variant not specified")
+        #     else:
+        #         raise ValueError("variant not specified")
         
         return self.dopamine
