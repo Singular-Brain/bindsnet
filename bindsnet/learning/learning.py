@@ -73,6 +73,7 @@ class LearningRule(ABC):
         else:
             self.reduction = reduction
         self.pred_label = None
+        self.pred_label_mask = None
         self.local_rewarding = None
 
         # Weight decay.
@@ -769,8 +770,9 @@ class MSTDPET(LearningRule):
                 *self.connection.w.shape, device=self.connection.w.device
             )
 
-        # self.pred_label = kwargs['pred_label']
-        # self.local_rewarding = kwargs['local_rewarding']
+        self.pred_label = kwargs['pred_label']
+        self.local_rewarding = kwargs['local_rewarding']
+
 
         # Reshape pre- and post-synaptic spikes.
         source_s = self.source.s.view(-1).float().to(self.connection.w.device)
@@ -793,9 +795,17 @@ class MSTDPET(LearningRule):
         self.eligibility_trace += self.eligibility / self.tc_e_trace
 
         # Compute weight update.
-        self.connection.w += (
-            self.nu[0] * self.connection.dt * reward * self.eligibility_trace
-        )
+        if self.local_rewarding == True and self.connection[1].startswith('output'):
+            self.pred_label_mask = torch.zeros(*self.connection.w.shape).to(self.connection.w.device)
+            self.pred_label_mask[...,self.pred_label*self.neuron_per_class:(self.pred_label+1)*self.neuron_per_class] = 1.0
+            
+            self.connection.w += self.pred_label_mask*(
+                self.nu[0] * self.connection.dt * reward * self.eligibility_trace
+            )
+        else:
+            self.connection.w += self.pred_label_mask*(
+                self.nu[0] * self.connection.dt * reward * self.eligibility_trace
+            )
 
         # Update P^+ and P^- values.
         self.p_plus *= torch.exp(-self.connection.dt / self.tc_plus)
