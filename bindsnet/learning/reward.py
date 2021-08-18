@@ -103,6 +103,17 @@ class DynamicDopamineInjection(AbstractReward):
     """
 
     """
+    def __init__(self, **kwargs) -> None:
+        # language=rst
+        """
+        Constructor for EMA reward prediction error.
+        """
+        self.reward_predict = torch.tensor(0.0)  # Predicted reward (per step).
+        self.reward_predict_episode = torch.tensor(0.0)  # Predicted reward per episode.
+        self.rewards_predict_episode = ([])  # List of predicted rewards per episode (used for plotting).\
+        self.accumulated_reward = torch.tensor(0.0)
+        self.variant = None
+    
     def compute(self, **kwargs) -> None:
         # language=rst
         """
@@ -112,39 +123,102 @@ class DynamicDopamineInjection(AbstractReward):
         self.n_labels = kwargs.get('n_labels')
         self.n_per_class = kwargs.get('neuron_per_class')
         self.single_output_layer = kwargs['single_output_layer']
-        self.tc_dps = kwargs.get('tc_dps')
-
-        self.dopamine_per_spike = kwargs.get('dopamine_per_spike', 0.01)
-        self.negative_dopamine_per_spike = kwargs.get('negative_dopamine_per_spike', 0.0)
-        self.dopamine_for_correct_pred = kwargs.get('dopamine_for_correct_pred', 1.0)
-        self.tc_reward = kwargs.get('tc_reward')
-        self.dopamine_base = kwargs.get('dopamine_base', 0.002)
-        self.give_reward = kwargs['give_reward']
-        dt = torch.as_tensor(self.dt)
-        self.decay = torch.exp(-dt / self.tc_reward)
-
-        self.variant = kwargs['variant']
-        
-        if self.variant == 'rl_td':
-            self.alpha = kwargs['alpha']
-            self.gamma = kwargs['gamma']
-
-
         self.label = kwargs.get('true_label', None)
+        self.variant = kwargs['variant']
+        self.sub_variant = kwargs['sub_variant']
+        self.give_reward = kwargs['give_reward']
+        
+        self.dopamine_base = kwargs.get('dopamine_base', 0.002)
+        self.rew_base = kwargs.get('reward_base', 0.01)
+        self.punish_base = kwargs.get('punishment_base', 0.0)
+        
+        self.td_nu = kwargs.get('td_nu',0.0001)
+        dt = torch.as_tensor(self.dt)
+        self.tc_reward = kwargs.get('tc_reward')
+        self.decay = torch.exp(-dt / self.tc_reward)
+        self.tc_dps = kwargs.get('tc_dps')
+        self.decay_dps = torch.exp(-dt / self.tc_dps)
+        self.dps_factor = kwargs.get('dps_factor')
 
-        self.dopamine = self.dopamine_base
-        if self.give_reward: 
-            self.dopamine += self.dopamine_for_correct_pred
+        self.dps = self.rew_base
+        self.neg_dps = self.punish_base
+        self.dopamine = self.dopamine_base 
+
+        # if self.variant == 'rl_td':
+        #     self.alpha = kwargs['alpha']
+        #     self.gamma = kwargs['gamma']
+
+        if self.sub_variant == 'static':
+            if self.variant == 'scalar' and self.give_reward:
+                if self.label == kwargs['pred_label']:
+                    self.dopamine = self.rew_base
+                else:
+                    self.dopamine = self.punish_base
+
+        elif self.sub_variant == 'RPE':
+            if self.variant == 'scalar':
+                if self.give_reward:
+                    if self.label == kwargs['pred_label']:
+                        self.dopamine = self.rew_base
+                    else:
+                        self.dopamine = self.punish_base
+                else: 
+                    self.rew_base = self.rew_base - self.td_nu*(self.accumulated_reward-self.reward_predict_episode)
+                    self.punish_base = self.punish_base + self.td_nu*(self.accumulated_reward-self.reward_predict_episode)
+                    
+            elif self.variant == 'true_pred' or self.variant == 'pure_per_spike':
+                self.dps = self.dps - self.td_nu*(self.accumulated_reward-self.reward_predict_episode)
+                self.neg_dps = self.neg_dps + self.td_nu*(self.accumulated_reward-self.reward_predict_episode)
+
+        elif self.sub_variant == 'pred_decay':
+            if self.variant == 'scalar':
+                if self.give_reward:
+                    if self.label == kwargs['pred_label']:
+                        self.dopamine = self.rew_base
+                        self.rew_base = self.rew_base - (self.dps_factor * self.dps)
+                        self.punish_base = self.punish_base + (self.dps_factor * self.neg_dps)
+                    else:
+                        self.dopamine = self.punish_base
+                        self.rew_base = self.rew_base + (self.dps_factor * self.dps)
+                        self.punish_base = self.punish_base - (self.dps_factor * self.neg_dps)
+                else: 
+                    self.rew_base = self.decay_dps * (self.rew_base - self.dps) + self.dps
+                    self.punish_base = self.decay_dps * (self.punish_base - self.neg_dps) + self.neg_dps
+                    
+            elif self.variant == 'true_pred' or self.variant == 'pure_per_spike':
+                assert True, "Not supported"
+                # self.dps = self.dps -
+                # self.neg_dps = self.neg_dps + 
+
+        else:
+            raise ValueError("sub_variant not specified")
         
         return self.dopamine
         
     def update(self, **kwargs) -> None:
         # language=rst
         """
-        Updates internal variables needed to modify reward. Usually called once per
-        episode.
+        Updates the EMAs. Called once per episode.
+
+        Keyword arguments:
+
+        :param Union[float, torch.Tensor] accumulated_reward: Reward accumulated over
+            one episode.
+        :param int steps: Steps in that episode.
+        :param float ema_window: Width of the averaging window.
         """
-        pass
+        # Get keyword arguments.
+        self.accumulated_reward = kwargs["accumulated_reward"]
+        steps = torch.tensor(kwargs["steps"]).float()
+        ema_window = torch.tensor(kwargs.get("ema_window", 10.0))
+
+        # Compute average reward per step.
+        self.reward = self.accumulated_reward / steps
+
+        # Update EMAs.
+        self.reward_predict = (1 - 1 / ema_window) * self.reward_predict + 1 / ema_window * self.reward
+        self.reward_predict_episode = (1 - 1 / ema_window) * self.reward_predict_episode + 1 / ema_window * self.accumulated_reward
+        self.rewards_predict_episode.append(self.reward_predict_episode.item())
 
     def online_compute(self, **kwargs) -> None:
         # language=rst
@@ -156,72 +230,67 @@ class DynamicDopamineInjection(AbstractReward):
         if self.label is None:
             return 0.0
         
-        if self.single_output_layer:
-            s = self.layers.s
-            assert s.shape[0] == 1, "This method has not yet been implemented for batch_size>1 !" 
-            self.dopamine = (
-                            self.decay
-                            * (self.dopamine - self.dopamine_base)
-                            + self.dopamine_base
-            ).to(s.device)
+        # if self.single_output_layer:
+        s = self.layers.s
+        assert s.shape[0] == 1, "This method has not yet been implemented for batch_size>1 !" 
+        self.dopamine = (self.decay * (self.dopamine - self.dopamine_base) + self.dopamine_base).to(s.device)
 
-            target_spikes = (s[:,self.label*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)                
+        target_spikes = (s[:,self.label*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)                
 
+        # if self.variant == 'rl_td':
+        #     label_spikes = [0]*self.n_labels
+        #     for i in range(self.n_labels):
+        #         label_spikes[i] = (s[:,i*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)
+        #     r = self.dopamine_per_spike*target_spikes
+        #     expected_r = self.dopamine_per_spike*sum(label_spikes)
+        #     self.dopamine =  self.dopamine + self.alpha*(r-self.gamma*expected_r)
 
-            if self.variant == 'rl_td':
-                label_spikes = [0]*self.n_labels
-                for i in range(self.n_labels):
-                    label_spikes[i] = (s[:,i*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)
-                r = self.dopamine_per_spike*target_spikes
-                expected_r = self.dopamine_per_spike*sum(label_spikes)
-                self.dopamine =  self.dopamine + self.alpha*(r-self.gamma*expected_r)
-
-
-            elif self.variant == 'true_pred':
-                label_spikes = [0.0]*self.n_labels
-                for i in range(self.n_labels):
-                    label_spikes[i] = (s[:,i*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)
-                if target_spikes == max(label_spikes):
-                    self.dopamine += target_spikes * self.dopamine_per_spike
-                else:
-                    self.dopamine -= max(label_spikes) * self.negative_dopamine_per_spike
-
-                
-            elif self.variant == "pure_per_spike":
-                self.dopamine += target_spikes * self.dopamine_per_spike - (s.sum()-target_spikes) * self.negative_dopamine_per_spike
-                #self.dopamine += target_spikes * self.dopamine_per_spike - max(label_spikes) * self.negative_dopamine_per_spike
-            
+        if self.variant == "pure_per_spike":
+            self.dopamine += target_spikes * self.dps - (s.sum()-target_spikes) * self.neg_dps
+            #self.dopamine += target_spikes * self.dopamine_per_spike - max(label_spikes) * self.negative_dopamine_per_spike
+        
+        elif self.variant == 'true_pred':
+            label_spikes = [0.0]*self.n_labels
+            for i in range(self.n_labels):
+                label_spikes[i] = (s[:,i*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)
+            if target_spikes == max(label_spikes):
+                self.dopamine += target_spikes * self.dps
             else:
-                raise ValueError("variant not specified")
+                self.dopamine -= max(label_spikes) * self.neg_dps  
 
         else:
-            target_layer = self.layers[f"output_{self.label}"]
-            target_spikes = target_layer.s
-            
-            self.dopamine = (
-                    self.decay
-                    * (self.dopamine - self.dopamine_base)
-                    + self.dopamine_base
-                    ).to(target_spikes.device)
-
-            if self.variant == 'true_pred': 
-                output_layers_spikes = [self.layers[l].s.sum() for l in self.layers if l.startswith("output")]   
-                if target_spikes.sum() == max(output_layers_spikes): 
-                    self.dopamine += target_spikes.sum() * self.dopamine_per_spike
-                else :
-                    self.dopamine -= max(output_layers_spikes).sum() * self.negative_dopamine_per_spike
-                    
-            elif self.variant == "pure_per_spike":
-                for name, layer in self.layers.items():
-                    if layer == target_layer:
-                        self.dopamine += layer.s.sum() * self.dopamine_per_spike
-                    else:
-                        self.dopamine -= layer.s.sum() * self.negative_dopamine_per_spike
-            
-            else:
-                raise ValueError("variant not specified")
+            raise ValueError("variant not specified")
         
         return self.dopamine
+
+        # else:
+        #     target_layer = self.layers[f"output_{self.label}"]
+        #     target_spikes = target_layer.s
+            
+        #     self.dopamine = (
+        #             self.decay
+        #             * (self.dopamine - self.dopamine_base)
+        #             + self.dopamine_base
+        #             ).to(target_spikes.device)
+
+        #     if self.variant == 'true_pred': 
+        #         output_layers_spikes = [self.layers[l].s.sum() for l in self.layers if l.startswith("output")]   
+        #         if target_spikes.sum() == max(output_layers_spikes): 
+        #             self.dopamine += target_spikes.sum() * self.dopamine_per_spike
+        #         else :
+        #             self.dopamine -= max(output_layers_spikes).sum() * self.negative_dopamine_per_spike
+                    
+        #     elif self.variant == "pure_per_spike":
+        #         for name, layer in self.layers.items():
+        #             if layer == target_layer:
+        #                 self.dopamine += layer.s.sum() * self.dopamine_per_spike
+        #             else:
+        #                 self.dopamine -= layer.s.sum() * self.negative_dopamine_per_spike
+            
+        #     else:
+        #         raise ValueError("variant not specified")
+        
+        
 
 
 class DopaminergicRPE(AbstractReward):
@@ -376,7 +445,8 @@ class DopaminergicRPE(AbstractReward):
             self.dopamine += target_spikes * self.dps - (s.sum()-target_spikes) * self.negative_dps
         else:
             raise ValueError("variant not specified")
-    
+        
+        return self.dopamine
         
         # else:
         #     target_layer = self.layers[f"output_{self.label}"]
@@ -403,6 +473,4 @@ class DopaminergicRPE(AbstractReward):
         #                 self.dopamine -= layer.s.sum() * self.negative_dps
             
         #     else:
-        #         raise ValueError("variant not specified")
-        
-        return self.dopamine
+        #         raise ValueError("variant not specified")        
