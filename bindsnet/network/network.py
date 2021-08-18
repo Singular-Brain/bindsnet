@@ -337,7 +337,7 @@ class Network(torch.nn.Module):
         self.true_label = kwargs.get('true_label', None)
 
         # Compute reward.
-        if self.reward_fn is not None and self.local_rewarding == False:
+        if self.reward_fn is not None:
             kwargs["reward"] = self.reward_fn.compute(**kwargs)
 
         # Dynamic setting of batch size.
@@ -374,14 +374,12 @@ class Network(torch.nn.Module):
         for t in range(timesteps):
 
             # Make a decision and compute reward
-            if self.has_decision_period and t == kwargs['observation_period']+kwargs['decision_period']:
+            if self.has_decision_period and t == kwargs['observation_period']+kwargs['decision_period'] and self.online == False:
                 out_spikes = self.spikes["output"].get("s").view(self.time, self.n_classes, self.neuron_per_class)
                 sum_spikes = out_spikes[self.observation_period:self.time-self.learning_period,:,:].sum(0).sum(1)
-                pred_label = torch.argmax(sum_spikes)
-                if pred_label == self.true_label:
-                    kwargs["reward"] = self.scalar_reward
-                else:
-                    kwargs["reward"] = -self.scalar_reward
+                kwargs['pred_label'] = torch.argmax(sum_spikes)
+                kwargs['true_label'] = self.true_label
+                kwargs["reward"] = self.reward_fn.compute(**kwargs)
 
             # Get input to all layers (synchronous mode).
             current_inputs = {}
