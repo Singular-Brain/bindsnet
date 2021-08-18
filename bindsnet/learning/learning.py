@@ -83,10 +83,7 @@ class LearningRule(ABC):
         """
         Abstract method for a learning rule update.
         """
-        print(self.target)
-        print(self.connection.w.shape)
-        print(self.pred_label)
-        print(self.local_rewarding)
+        
         # Implement weight decay.
         if self.weight_decay:
             self.connection.w *= self.weight_decay
