@@ -439,14 +439,10 @@ class Network(torch.nn.Module):
 
             # # Get input to all layers.
             # current_inputs.update(self._get_inputs())
-            print(self.reward_fn)
-            print(self.online)
-            print(t)
-            print(self.observation_period + self.decision_period)
-            if self.reward_fn is not None and self.online == True and t>=self.observation_period + self.decision_period:
-                print('*')
-                kwargs["reward"] = self.reward_fn.online_compute(**kwargs)
 
+            if self.reward_fn is not None and self.online == True and t>=self.observation_period + self.decision_period:
+                kwargs["reward"] = self.reward_fn.online_compute(**kwargs)
+                print('reward:', kwargs["reward"])
             # Record state variables of interest.
             for m in self.monitors:
                 self.monitors[m].record(**kwargs)

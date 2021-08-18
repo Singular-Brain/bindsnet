@@ -166,6 +166,7 @@ class DynamicDopamineInjection(AbstractReward):
             ).to(s.device)
 
             target_spikes = (s[:,self.label*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)                
+            print('target_spikes', target_spikes)
 
 
             if self.variant == 'rl_td':
@@ -352,7 +353,7 @@ class DopaminergicRPE(AbstractReward):
         episode.
         """
         if self.label is None:
-            return 0
+            return 0.0
         
         #if self.single_output_layer:
         s = self.layers.s
@@ -364,7 +365,6 @@ class DopaminergicRPE(AbstractReward):
         ).to(s.device)
         target_spikes = (s[:,self.label*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)                
         #self.dopamine += target_spikes * self.dps #- (s.sum()-target_spikes) * self.negative_dopamine_per_spike
-        print(target_spikes)
         if self.variant == 'true_pred':
             label_spikes = [0.0]*self.n_labels
             for i in range(self.n_labels):
