@@ -82,8 +82,8 @@ class LearningRule(ABC):
         Abstract method for a learning rule update.
         """
         if kwargs['local_rewarding'] == True:
-            self.mask_label = kwargs['pred_label']
-
+            self.pred_label = kwargs['pred_label']
+            print(self.connection.w.shape)
         # Implement weight decay.
         if self.weight_decay:
             self.connection.w *= self.weight_decay
