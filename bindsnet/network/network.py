@@ -374,7 +374,7 @@ class Network(torch.nn.Module):
         for t in range(timesteps):
 
             # Make a decision and compute reward
-            if self.has_decision_period and t == kwargs['observation_period']+kwargs['decision_period'] and self.online == False:
+            if self.has_decision_period and t == self.observation_period+self.decision_period and self.online == False:
                 out_spikes = self.spikes["output"].get("s").view(self.time, self.n_classes, self.neuron_per_class)
                 sum_spikes = out_spikes[self.observation_period:self.time-self.learning_period,:,:].sum(0).sum(1)
                 kwargs['pred_label'] = torch.argmax(sum_spikes)
@@ -429,7 +429,7 @@ class Network(torch.nn.Module):
 
             # Run synapse updates.
             for c in self.connections:
-                if t < kwargs["observation_period"] + kwargs["decision_period"]:
+                if t < self.observation_period + self.decision_period:
                     pass 
                 else:
                     self.connections[c].update(
@@ -439,7 +439,7 @@ class Network(torch.nn.Module):
             # # Get input to all layers.
             # current_inputs.update(self._get_inputs())
 
-            if self.reward_fn is not None and self.online == True and t>=kwargs['observation_period'] + kwargs["decision_period"]:
+            if self.reward_fn is not None and self.online == True and t>=self.observation_period + self.decision_period:
                 kwargs["reward"] = self.reward_fn.online_compute(**kwargs)
 
             # Record state variables of interest.
