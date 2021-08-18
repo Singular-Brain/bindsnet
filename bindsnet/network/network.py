@@ -431,6 +431,7 @@ class Network(torch.nn.Module):
             # Run synapse updates.
             for c in self.connections:
                 if t < self.observation_period + self.decision_period:
+                    print(t)
                     pass 
                 else:
                     self.connections[c].update(
