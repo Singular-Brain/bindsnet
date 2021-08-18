@@ -337,6 +337,7 @@ class Network(torch.nn.Module):
         self.true_label = kwargs.get('true_label', None)
         kwargs['pred_label'] = None
         kwargs['local_rewarding'] = self.local_rewarding
+        kwargs['neuron_per_class'] = self.neuron_per_class
         # Compute reward.
         kwargs['give_reward'] = False
         if self.reward_fn is not None:
