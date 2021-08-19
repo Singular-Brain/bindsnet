@@ -112,11 +112,9 @@ class DynamicDopamineInjection(AbstractReward):
         self.reward_predict_episode = torch.tensor(0.0)  # Predicted reward per episode.
         self.rewards_predict_episode = ([])  # List of predicted rewards per episode (used for plotting).\
         self.accumulated_reward = torch.tensor(0.0)
-        self.layers = kwargs['dopaminergic_layers']
         self.n_labels = kwargs['n_labels']
         self.n_per_class = kwargs['neuron_per_class']
-        self.variant = kwargs['variant']
-        self.sub_variant = kwargs['sub_variant']
+
         self.dopamine_base = kwargs['dopamine_base']
         self.rew_base = kwargs['reward_base']
         self.punish_base = kwargs['punishment_base']
@@ -139,10 +137,11 @@ class DynamicDopamineInjection(AbstractReward):
         """
         Computes/modifies reward.
         """
-
+        self.layers = kwargs['dopaminergic_layers']
         self.label = kwargs['true_label']
         self.give_reward = kwargs['give_reward']
-   
+        self.variant = kwargs['variant']
+        self.sub_variant = kwargs['sub_variant']
         # if self.variant == 'rl_td':
         #     self.alpha = kwargs['alpha']
         #     self.gamma = kwargs['gamma']
@@ -231,7 +230,7 @@ class DynamicDopamineInjection(AbstractReward):
         s = self.layers.s
         assert s.shape[0] == 1, "This method has not yet been implemented for batch_size>1 !" 
         self.dopamine = (self.decay * (self.dopamine - self.dopamine_base) + self.dopamine_base).to(s.device)
-
+        
         target_spikes = (s[:,self.label*self.n_per_class:(self.label+1)*self.n_per_class,...]).sum().to(s.device)                
 
         # if self.variant == 'rl_td':
