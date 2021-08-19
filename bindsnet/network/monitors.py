@@ -69,6 +69,7 @@ class Monitor(AbstractMonitor):
         Note, if time == `None`, get return the logs and empty the monitor variable
 
         """
+        print(self.recording[var], type(self.recording[var]))
         return_logs = torch.cat(self.recording[var], 0)
         if self.time is None:
             self.recording[var] = []
@@ -100,7 +101,7 @@ class Monitor(AbstractMonitor):
             self.recording = {v: [] for v in self.state_vars}
         else:
             self.recording = {
-                v: [[] for i in range(self.time)] for v in self.state_vars
+                v: torch.tensor([torch.tensor([]) for i in range(self.time)]) for v in self.state_vars
             }
 
 
