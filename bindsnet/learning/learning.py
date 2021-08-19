@@ -798,12 +798,12 @@ class MSTDPET(LearningRule):
         if self.local_rewarding == True and self.target_name.startswith('output') and self.pred_label is not None:
             self.pred_label_mask = torch.zeros(*self.connection.w.shape).to(self.connection.w.device)
             self.pred_label_mask[...,self.pred_label*self.neuron_per_class:(self.pred_label+1)*self.neuron_per_class] = 1.0
-            print(self.pred_label_mask)
-            print(self.connection.w)
+            # print(self.pred_label_mask)
+            # print(self.connection.w)
             self.connection.w += self.pred_label_mask*(
                 self.nu[0] * self.connection.dt * reward * self.eligibility_trace
             )
-            print(self.connection.w)
+            #print(self.connection.w)
         else:
             self.connection.w += (
                 self.nu[0] * self.connection.dt * reward * self.eligibility_trace
