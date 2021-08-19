@@ -101,7 +101,7 @@ class Monitor(AbstractMonitor):
             self.recording = {v: [] for v in self.state_vars}
         else:
             self.recording = {
-                v: torch.tensor([torch.tensor([]) for i in range(self.time)]) for v in self.state_vars
+                v: [[] for i in range(self.time)] for v in self.state_vars
             }
 
 
