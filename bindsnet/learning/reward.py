@@ -137,6 +137,7 @@ class DynamicDopamineInjection(AbstractReward):
         """
         Computes/modifies reward.
         """
+        self.dopamine = self.dopamine_base
         self.layers = kwargs['dopaminergic_layers']
         self.label = kwargs['true_label']
         self.give_reward = kwargs['give_reward']
