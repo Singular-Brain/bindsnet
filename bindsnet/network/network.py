@@ -378,6 +378,19 @@ class Network(torch.nn.Module):
         # Simulate network activity for `time` timesteps.
         for t in range(timesteps):
 
+            # Make a decision and compute reward
+            if  self.online == False:
+                if (self.has_decision_period and t == self.observation_period+self.decision_period):
+                    #print(self.spikes['output'].get('s').shape)
+                    out_spikes = self.spikes_monitor["output"].get("s").view(self.time, self.n_classes, self.neuron_per_class)
+                    sum_spikes = out_spikes[self.observation_period:self.time-self.decision_period,:,:].sum(0).sum(1)
+                    kwargs['pred_label'] = torch.argmax(sum_spikes)
+                    kwargs['true_label'] = self.true_label
+                    kwargs['give_reward'] = True
+                    #TODO: if you want per spike modulation, pls calculate rew_base and punish_base
+                    assert kwargs['sub_variant'] == 'scalar', "the subvariant must be scalar"
+                    kwargs["reward"] = self.reward_fn.compute(**kwargs)
+            
             # Get input to all layers (synchronous mode).
             current_inputs = {}
             if not one_step:
@@ -427,7 +440,9 @@ class Network(torch.nn.Module):
             # Run synapse updates.
             for c in self.connections:
                 if t < self.observation_period + self.decision_period and c[1].startswith("output"):
-                    pass 
+                    self.connections[c].update(
+                        mask=masks.get(c, None), learning=False, **kwargs
+                        )                
                 else:
                     kwargs['target_name'] = c[1]
                     self.connections[c].update(
@@ -442,20 +457,7 @@ class Network(torch.nn.Module):
             # Record state variables of interest.
             for m in self.monitors:
                 self.monitors[m].record(**kwargs)
-            
-            # Make a decision and compute reward
-            if  self.online == False:
-                if (self.has_decision_period and t == self.observation_period+self.decision_period):
-                    print(self.spikes['output'].get('s').shape)
-                    out_spikes = self.spikes_monitor["output"].get("s").view(self.time, self.n_classes, self.neuron_per_class)
-                    sum_spikes = out_spikes[self.observation_period:self.time-self.decision_period,:,:].sum(0).sum(1)
-                    kwargs['pred_label'] = torch.argmax(sum_spikes)
-                    kwargs['true_label'] = self.true_label
-                    kwargs['give_reward'] = True
-                    #TODO: if you want per spike modulation, pls calculate rew_base and punish_base
-                    assert kwargs['sub_variant'] == 'scalar', "the subvariant must be scalar"
-                    kwargs["reward"] = self.reward_fn.compute(**kwargs)
-            
+        
 
         # Re-normalize connections.
         # for c in self.connections:
