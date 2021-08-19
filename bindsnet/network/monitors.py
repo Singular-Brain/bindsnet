@@ -69,7 +69,6 @@ class Monitor(AbstractMonitor):
         Note, if time == `None`, get return the logs and empty the monitor variable
 
         """
-        print(self.recording[var])
         return_logs = torch.cat(self.recording[var], 0)
         if self.time is None:
             self.recording[var] = []
