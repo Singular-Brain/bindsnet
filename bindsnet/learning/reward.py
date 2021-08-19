@@ -112,21 +112,12 @@ class DynamicDopamineInjection(AbstractReward):
         self.reward_predict_episode = torch.tensor(0.0)  # Predicted reward per episode.
         self.rewards_predict_episode = ([])  # List of predicted rewards per episode (used for plotting).\
         self.accumulated_reward = torch.tensor(0.0)
-    
-    def compute(self, **kwargs) -> None:
-        # language=rst
-        """
-        Computes/modifies reward.
-        """
         self.layers = kwargs.get('dopaminergic_layers')
         self.n_labels = kwargs.get('n_labels')
         self.n_per_class = kwargs.get('neuron_per_class')
         self.single_output_layer = kwargs['single_output_layer']
-        self.label = kwargs.get('true_label', None)
         self.variant = kwargs['variant']
         self.sub_variant = kwargs['sub_variant']
-        self.give_reward = kwargs['give_reward']
-        
         self.dopamine_base = kwargs.get('dopamine_base', 0.0)
         self.rew_base = kwargs.get('reward_base', 0.01)
         self.punish_base = kwargs.get('punishment_base', 0.0)
@@ -143,7 +134,16 @@ class DynamicDopamineInjection(AbstractReward):
         self.dps = self.rew_base
         self.neg_dps = self.punish_base
         self.dopamine = self.dopamine_base 
+    
+    def compute(self, **kwargs) -> None:
+        # language=rst
+        """
+        Computes/modifies reward.
+        """
 
+        self.label = kwargs.get('true_label', None)
+        self.give_reward = kwargs['give_reward']
+   
         # if self.variant == 'rl_td':
         #     self.alpha = kwargs['alpha']
         #     self.gamma = kwargs['gamma']
@@ -162,10 +162,9 @@ class DynamicDopamineInjection(AbstractReward):
                         self.dopamine = self.rew_base
                     else:
                         self.dopamine = -self.punish_base
-                else: 
+                else:
                     self.rew_base = torch.clip(self.rew_base - self.td_nu*(self.accumulated_reward-self.reward_predict_episode), min=self.dps/self.dps_factor,max=self.dps*self.dps_factor)
                     self.punish_base = torch.clip(self.punish_base + self.td_nu*(self.accumulated_reward-self.reward_predict_episode), min=self.neg_dps/self.dps_factor,max=self.neg_dps*self.dps_factor)
-                    
             elif self.variant == 'true_pred' or self.variant == 'pure_per_spike':
                 self.dps = torch.clip(self.dps - self.td_nu*(self.accumulated_reward-self.reward_predict_episode),min=self.rew_base/self.dps_factor, max=self.rew_base*self.dps_factor)
                 self.neg_dps = torch.clip(self.neg_dps + self.td_nu*(self.accumulated_reward-self.reward_predict_episode),min=self.punish_base/self.dps_factor, max=self.punish_base*self.dps_factor)
@@ -192,7 +191,6 @@ class DynamicDopamineInjection(AbstractReward):
 
         else:
             raise ValueError("sub_variant not specified")
-        
         return torch.tensor(self.dopamine)
         
     def update(self, **kwargs) -> None:
