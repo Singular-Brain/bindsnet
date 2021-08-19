@@ -115,7 +115,6 @@ class DynamicDopamineInjection(AbstractReward):
         self.layers = kwargs.get('dopaminergic_layers')
         self.n_labels = kwargs.get('n_labels')
         self.n_per_class = kwargs.get('neuron_per_class')
-        self.single_output_layer = kwargs['single_output_layer']
         self.variant = kwargs['variant']
         self.sub_variant = kwargs['sub_variant']
         self.dopamine_base = kwargs.get('dopamine_base', 0.0)
