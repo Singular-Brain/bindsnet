@@ -446,6 +446,7 @@ class Network(torch.nn.Module):
             # Make a decision and compute reward
             if  self.online == False:
                 if (self.has_decision_period and t == self.observation_period+self.decision_period):
+                    print(self.spikes_monitor['output'].shape,self.spikes['output'].shape)
                     out_spikes = self.spikes_monitor["output"].get("s").view(self.time, self.n_classes, self.neuron_per_class)
                     sum_spikes = out_spikes[self.observation_period:self.time-self.decision_period,:,:].sum(0).sum(1)
                     kwargs['pred_label'] = torch.argmax(sum_spikes)
