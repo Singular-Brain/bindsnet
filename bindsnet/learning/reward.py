@@ -209,7 +209,7 @@ class DynamicDopamineInjection(AbstractReward):
         """
         # Get keyword arguments.
         self.accumulated_reward = kwargs["accumulated_reward"]
-        steps = torch.tensor(kwargs["steps"]).float()
+        #steps = torch.tensor(kwargs["steps"]).float()
         ema_window = torch.tensor(kwargs.get("ema_window", 10.0))
 
         # Compute average reward per step.
