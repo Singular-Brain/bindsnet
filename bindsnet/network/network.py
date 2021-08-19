@@ -387,7 +387,7 @@ class Network(torch.nn.Module):
                     kwargs['true_label'] = self.true_label
                     kwargs['give_reward'] = True
                     #TODO: if you want per spike modulation, pls calculate rew_base and punish_base
-                    assert kwargs['sub_variant'] == 'scalar', "the subvariant must be scalar"
+                    assert kwargs['variant'] == 'scalar', "the variant must be scalar"
                     kwargs["reward"] = self.reward_fn.compute(**kwargs)
             
             # Get input to all layers (synchronous mode).
