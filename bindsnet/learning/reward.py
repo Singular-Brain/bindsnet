@@ -193,7 +193,7 @@ class DynamicDopamineInjection(AbstractReward):
         else:
             raise ValueError("sub_variant not specified")
         
-        return self.dopamine
+        return torch.tensor(self.dopamine)
         
     def update(self, **kwargs) -> None:
         # language=rst
