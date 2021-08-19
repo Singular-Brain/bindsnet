@@ -335,7 +335,6 @@ class Network(torch.nn.Module):
         masks = kwargs.get("masks", {})
         injects_v = kwargs.get("injects_v", {})
         self.true_label = kwargs.get('true_label', None)
-        self.spikes_monitor = kwargs.get('spikes_monitor')
         kwargs['pred_label'] = None
         kwargs['local_rewarding'] = self.local_rewarding
         kwargs['neuron_per_class'] = self.neuron_per_class
@@ -382,7 +381,7 @@ class Network(torch.nn.Module):
             if  self.online == False:
                 if (self.has_decision_period and t == self.observation_period+self.decision_period):
                     #print(self.spikes['output'].get('s').shape)
-                    out_spikes = self.spikes_monitor["output"].get("s").view(self.time, self.n_classes, self.neuron_per_class)
+                    out_spikes = self.spikes["output"].get("s").view(self.time, self.n_classes, self.neuron_per_class)
                     sum_spikes = out_spikes[self.observation_period:self.time-self.decision_period,:,:].sum(0).sum(1)
                     kwargs['pred_label'] = torch.argmax(sum_spikes)
                     kwargs['true_label'] = self.true_label
@@ -442,7 +441,7 @@ class Network(torch.nn.Module):
                 if t < self.observation_period + self.decision_period and c[1].startswith("output"):
                     self.connections[c].update(
                         mask=masks.get(c, None), learning=False, **kwargs
-                        )                
+                        )
                 else:
                     kwargs['target_name'] = c[1]
                     self.connections[c].update(
