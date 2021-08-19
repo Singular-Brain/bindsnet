@@ -438,7 +438,7 @@ class Network(torch.nn.Module):
 
             # Run synapse updates.
             for c in self.connections:
-                if t < self.observation_period + self.decision_period and c[1].startswith("output"):
+                if t < self.time-self.learning_period and c[1].startswith("output"):
                     self.connections[c].update(
                         mask=masks.get(c, None), learning=False, **kwargs
                         )
@@ -451,7 +451,7 @@ class Network(torch.nn.Module):
             # # Get input to all layers.
             # current_inputs.update(self._get_inputs())
 
-            if self.reward_fn is not None and self.online == True and t>=self.observation_period + self.decision_period:
+            if self.reward_fn is not None and self.online == True and t>=self.time-self.learning_period:
                 kwargs["reward"] = self.reward_fn.online_compute(**kwargs)
             # Record state variables of interest.
             for m in self.monitors:
