@@ -180,8 +180,8 @@ class DynamicDopamineInjection(AbstractReward):
                         self.rew_base =  torch.clip((1 + 1/self.dps_factor) * self.rew_base,  min=self.dps/self.dps_factor,max=self.dps*self.dps_factor)
                         self.punish_base = torch.clip((1 - 1/self.dps_factor) * self.punish_base,  min=self.neg_dps/self.dps_factor,max=self.neg_dps*self.dps_factor)
                 else: 
-                    self.rew_base = self.decay_dps * (self.rew_base - self.dps) + self.dps # self.dps = initial value of rew_base
-                    self.punish_base = self.decay_dps * (self.punish_base - self.neg_dps) + self.neg_dps
+                    self.rew_base -= self.decay_dps * (self.rew_base - self.dps) # self.dps = initial value of rew_base
+                    self.punish_base -= self.decay_dps * (self.punish_base - self.neg_dps)
                     
             elif self.variant == 'true_pred' or self.variant == 'pure_per_spike':
                 assert True, "Not supported"
