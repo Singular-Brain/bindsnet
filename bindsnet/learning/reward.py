@@ -140,7 +140,7 @@ class DynamicDopamineInjection(AbstractReward):
         Computes/modifies reward.
         """
 
-        self.label = kwargs.get('true_label', None)
+        self.label = kwargs['true_label']
         self.give_reward = kwargs['give_reward']
    
         # if self.variant == 'rl_td':
