@@ -89,7 +89,10 @@ class LearningRule(ABC):
         # Implement weight decay.
         if self.weight_decay:
             self.connection.w *= self.weight_decay
-
+            
+        if self.connection.soft_bound:
+            self.connection.w *= ((self.connection.w - self.connection.wmin) * (self.connection.wmax - self.connection.w))
+        
         # Bound weights.
         if (
             self.connection.wmin != -np.inf or self.connection.wmax != np.inf

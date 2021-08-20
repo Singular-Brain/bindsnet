@@ -21,6 +21,7 @@ class AbstractConnection(ABC, Module):
         self,
         source: Nodes,
         target: Nodes,
+        soft_bound: Optional[bool] = False,
         nu: Optional[Union[float, Sequence[float]]] = None,
         reduction: Optional[callable] = None,
         weight_decay: float = 0.0,
@@ -56,6 +57,7 @@ class AbstractConnection(ABC, Module):
         # self.nu = nu
         self.weight_decay = weight_decay
         self.reduction = reduction
+        self.soft_bound = soft_bound
 
         from ..learning import NoOp
 
@@ -64,8 +66,9 @@ class AbstractConnection(ABC, Module):
         self.wmax = kwargs.get("wmax", np.inf)
         self.norm = kwargs.get("norm", None)
         self.decay = kwargs.get("decay", None)
-        kwargs['wmin'] = self.wmin
-        kwargs['wmax'] = self.wmax
+
+        if self.wmin == -np.inf or self.wmax == np.inf:
+            assert self.soft_bound == False, 'Soft bound is not supported wit wmin or wmax equal to infinity.'
 
         if self.update_rule is None:
             self.update_rule = NoOp
