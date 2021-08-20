@@ -64,6 +64,8 @@ class AbstractConnection(ABC, Module):
         self.wmax = kwargs.get("wmax", np.inf)
         self.norm = kwargs.get("norm", None)
         self.decay = kwargs.get("decay", None)
+        kwargs['wmin'] = self.wmin
+        kwargs['wmax'] = self.wmax
 
         if self.update_rule is None:
             self.update_rule = NoOp
