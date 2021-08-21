@@ -608,8 +608,9 @@ class MSTDP(LearningRule):
             self.pred_label_mask[...,self.pred_label*self.neuron_per_class:(self.pred_label+1)*self.neuron_per_class] = 1.0
             # print(self.pred_label_mask)
             # print(self.connection.w)
+            print(self.connection.w[...,self.pred_label*self.neuron_per_class], self.connection.w[...,self.pred_label*self.neuron_per_class-1])
             self.connection.w += (self.pred_label_mask*self.nu[0] * self.reduction(update, dim=0))*self.soft_bound_decay()
-
+            print(self.connection.w[...,self.pred_label*self.neuron_per_class],self.connection.w[...,self.pred_label*self.neuron_per_class-1])
             #print(self.connection.w)
         else:
             self.connection.w += self.nu[0] * self.reduction(update, dim=0)*self.soft_bound_decay()
