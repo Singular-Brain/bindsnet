@@ -796,7 +796,7 @@ class MSTDPET(LearningRule):
         # of the point eligibility value of the past timestep.
         self.eligibility_trace *= torch.exp(-self.connection.dt / self.tc_e_trace)
         self.eligibility_trace += self.eligibility / self.tc_e_trace
-
+        print(self.eligibility_trace)
         # Compute weight update.
         if self.local_rewarding == True and self.target_name.startswith('output') and self.pred_label is not None:
             self.pred_label_mask = torch.zeros(*self.connection.w.shape).to(self.connection.w.device)
