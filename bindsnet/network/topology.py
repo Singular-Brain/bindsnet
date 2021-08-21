@@ -21,7 +21,6 @@ class AbstractConnection(ABC, Module):
         self,
         source: Nodes,
         target: Nodes,
-        soft_bound: Optional[bool] = False,
         nu: Optional[Union[float, Sequence[float]]] = None,
         reduction: Optional[callable] = None,
         weight_decay: float = 0.0,
@@ -57,7 +56,7 @@ class AbstractConnection(ABC, Module):
         # self.nu = nu
         self.weight_decay = weight_decay
         self.reduction = reduction
-        self.soft_bound = soft_bound
+        self.soft_bound = kwargs.get('soft_bound', False)
 
         from ..learning import NoOp
 
