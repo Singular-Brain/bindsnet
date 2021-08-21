@@ -689,7 +689,7 @@ class MSTDP(LearningRule):
             target_s, self.p_plus.permute((0, 2, 1))
         ) + torch.bmm(self.p_minus, source_s.permute((0, 2, 1)))
         self.eligibility = self.eligibility.view(self.connection.w.size())
-
+        print(self.eligibility)
         super().update()
 
 
@@ -796,7 +796,7 @@ class MSTDPET(LearningRule):
         # of the point eligibility value of the past timestep.
         self.eligibility_trace *= torch.exp(-self.connection.dt / self.tc_e_trace)
         self.eligibility_trace += self.eligibility / self.tc_e_trace
-        print(self.eligibility_trace)
+        #print(self.eligibility_trace)
         # Compute weight update.
         if self.local_rewarding == True and self.target_name.startswith('output') and self.pred_label is not None:
             self.pred_label_mask = torch.zeros(*self.connection.w.shape).to(self.connection.w.device)
