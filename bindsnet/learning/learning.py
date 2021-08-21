@@ -89,9 +89,10 @@ class LearningRule(ABC):
         # Implement weight decay.
         if self.weight_decay:
             self.connection.w *= self.weight_decay
-            
+        
+        self.soft_bound_decay = 1.0
         if self.connection.soft_bound:
-            self.connection.w *= ((self.connection.w - self.connection.wmin) * (self.connection.wmax - self.connection.w))
+            self.soft_bound_decay = (self.connection.w - self.connection.wmin) * (self.connection.wmax - self.connection.w)
         
         # Bound weights.
         if (
@@ -199,7 +200,7 @@ class PostPre(LearningRule):
         if self.nu[0]:
             source_s = self.source.s.view(batch_size, -1).unsqueeze(2).float().to(self.connection.w.device)
             target_x = (self.target.x.view(batch_size, -1).unsqueeze(1) * self.nu[0]).to(self.connection.w.device)
-            self.connection.w -= self.reduction(torch.bmm(source_s, target_x), dim=0)
+            self.connection.w -= (self.reduction(torch.bmm(source_s, target_x), dim=0))*self.soft_bound_decay
             del source_s, target_x
 
         # Post-synaptic update.
@@ -208,7 +209,7 @@ class PostPre(LearningRule):
                 self.target.s.view(batch_size, -1).unsqueeze(1).float() * self.nu[1]
             ).to(self.connection.w.device)
             source_x = self.source.x.view(batch_size, -1).unsqueeze(2).to(self.connection.w.device)
-            self.connection.w += self.reduction(torch.bmm(source_x, target_s), dim=0)
+            self.connection.w += (self.reduction(torch.bmm(source_x, target_s), dim=0))*self.soft_bound_decay
             del source_x, target_s
 
         super().update()
@@ -332,7 +333,7 @@ class WeightDependentPostPre(LearningRule):
             outer_product = self.reduction(torch.bmm(source_x, target_s), dim=0)
             update += self.nu[1] * outer_product * (self.wmax - self.connection.w)
 
-        self.connection.w += update
+        self.connection.w += (update)*self.soft_bound_decay
 
         super().update()
 
@@ -460,7 +461,7 @@ class Hebbian(LearningRule):
 
         # Post-synaptic update.
         update = self.reduction(torch.bmm(source_x, target_s), dim=0)
-        self.connection.w += self.nu[1] * update
+        self.connection.w += self.nu[1] * update * self.soft_bound_decay
 
         super().update()
 
@@ -606,11 +607,11 @@ class MSTDP(LearningRule):
             self.pred_label_mask[...,self.pred_label*self.neuron_per_class:(self.pred_label+1)*self.neuron_per_class] = 1.0
             # print(self.pred_label_mask)
             # print(self.connection.w)
-            self.connection.w += (self.pred_label_mask*self.nu[0] * self.reduction(update, dim=0))
+            self.connection.w += (self.pred_label_mask*self.nu[0] * self.reduction(update, dim=0))*self.soft_bound_decay
 
             #print(self.connection.w)
         else:
-            self.connection.w += self.nu[0] * self.reduction(update, dim=0)
+            self.connection.w += self.nu[0] * self.reduction(update, dim=0)*self.soft_bound_decay
 
         #print(self.connection.w)
         # Update P^+ and P^- values.
@@ -814,12 +815,12 @@ class MSTDPET(LearningRule):
             # print(self.connection.w)
             self.connection.w += self.pred_label_mask*(
                 self.nu[0] * self.connection.dt * reward * self.eligibility_trace
-            )
+            )*self.soft_bound_decay
             #print(self.connection.w)
         else:
             self.connection.w += (
                 self.nu[0] * self.connection.dt * reward * self.eligibility_trace
-            )
+            )*self.soft_bound_decay
 
         # Update P^+ and P^- values.
         self.p_plus *= torch.exp(-self.connection.dt / self.tc_plus)
