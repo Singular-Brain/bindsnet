@@ -372,7 +372,7 @@ class Network(torch.nn.Module):
                 break
 
         # Effective number of timesteps.
-        timesteps = int(time / self.dt)
+        timesteps = int(self.time / self.dt)
 
         # Simulate network activity for `time` timesteps.
         for t in range(timesteps):
