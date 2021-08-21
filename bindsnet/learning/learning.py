@@ -612,6 +612,7 @@ class MSTDP(LearningRule):
         self.eligibility = torch.bmm(
             self.p_plus.unsqueeze(2), target_s.unsqueeze(1)
         ) + torch.bmm(source_s.unsqueeze(2), self.p_minus.unsqueeze(1))
+        print(self.eligibility)
 
         super().update()
 
@@ -689,7 +690,6 @@ class MSTDP(LearningRule):
             target_s, self.p_plus.permute((0, 2, 1))
         ) + torch.bmm(self.p_minus, source_s.permute((0, 2, 1)))
         self.eligibility = self.eligibility.view(self.connection.w.size())
-        print(self.eligibility)
         super().update()
 
 
