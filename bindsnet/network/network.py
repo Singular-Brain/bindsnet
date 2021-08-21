@@ -341,7 +341,7 @@ class Network(torch.nn.Module):
         
         # Compute reward.
         kwargs['give_reward'] = False
-        if self.reward_fn is not None:
+        if self.reward_fn is not None and self.learning == True:
             kwargs["reward"] = self.reward_fn.compute(**kwargs)
 
         # Dynamic setting of batch size.
@@ -388,7 +388,8 @@ class Network(torch.nn.Module):
                     kwargs['give_reward'] = True
                     #TODO: if you want per spike modulation, pls calculate rew_base and punish_base
                     assert kwargs['variant'] == 'scalar', "the variant must be scalar"
-                    kwargs["reward"] = self.reward_fn.compute(**kwargs)
+                    if self.learning == True:
+                        kwargs["reward"] = self.reward_fn.compute(**kwargs)
             
             # Get input to all layers (synchronous mode).
             current_inputs = {}
@@ -451,7 +452,7 @@ class Network(torch.nn.Module):
             # # Get input to all layers.
             # current_inputs.update(self._get_inputs())
 
-            if self.reward_fn is not None and self.online == True and t>=self.time-self.learning_period:
+            if self.reward_fn is not None and self.online == True and t>=self.time-self.learning_period and self.learning == True:
                 kwargs["reward"] = self.reward_fn.online_compute(**kwargs)
             # Record state variables of interest.
             for m in self.monitors:
