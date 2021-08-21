@@ -612,7 +612,7 @@ class MSTDP(LearningRule):
         # else:
         self.connection.w += self.nu[0] * self.reduction(update, dim=0)
 
-        print(self.connection.w)
+        # print(self.connection.w)
         # Update P^+ and P^- values.
         self.p_plus *= torch.exp(-self.connection.dt / self.tc_plus).to(self.connection.w.device)
         self.p_plus += a_plus * source_s
@@ -831,7 +831,7 @@ class MSTDPET(LearningRule):
         self.eligibility = torch.outer(self.p_plus, target_s) + torch.outer(
             source_s, self.p_minus
         )
-        print(self.connection.w)
+        #print(self.connection.w)
         super().update()
 
     def _conv2d_connection_update(self, **kwargs) -> None:
