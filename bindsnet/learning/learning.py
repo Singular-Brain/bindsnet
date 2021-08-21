@@ -95,12 +95,12 @@ class LearningRule(ABC):
             self.connection.wmin != -np.inf or self.connection.wmax != np.inf
         ) and not isinstance(self, NoOp):
             self.connection.w.clamp_(self.connection.wmin, self.connection.wmax)
-            
+
     def soft_bound_decay(self):
-        soft_bound_decay = 1.0
+        soft_bound_decay_ = 1.0
         if self.connection.soft_bound:
-            soft_bound_decay = (self.connection.w - self.connection.wmin) * (self.connection.wmax - self.connection.w)
-        return soft_bound_decay
+            soft_bound_decay_ = (self.connection.w - self.connection.wmin) * (self.connection.wmax - self.connection.w)
+        return soft_bound_decay_
 
 class NoOp(LearningRule):
     # language=rst
