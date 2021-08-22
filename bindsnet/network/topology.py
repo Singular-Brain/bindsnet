@@ -663,7 +663,7 @@ class LocalConnection(AbstractConnection):
         if self.norm is not None:
             w = self.w.view(self.source.n, self.target.n)
             print(w[:,0],w[:,0].shape)
-            print(self.w.sum(0).view(1, -1),(self.norm / (self.w.sum(0).view(1, -1))).shape)
+            print(self.norm / self.w.sum(0).view(1, -1),(self.norm / (self.w.sum(0).view(1, -1))).shape)
             w *= self.norm / self.w.sum(0).view(1, -1)
             print('just after normalize',w)
     def normalize_meh(self) -> None:
