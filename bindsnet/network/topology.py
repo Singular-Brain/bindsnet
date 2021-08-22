@@ -661,12 +661,13 @@ class LocalConnection(AbstractConnection):
         ``self.norm``.
         """
         if self.norm is not None:
-            print(self.w)
+            print('1',self.w, self.w.shape)
             w_abs_sum = self.w.abs().sum(0).unsqueeze(0)
             w_abs_sum[w_abs_sum == 0] = 1.0
-            print(w_abs_sum)
+            print('2',w_abs_sum,w_abs_sum.shape)
+            print('3',self.norm)
             self.w *= (self.norm / w_abs_sum)
-            print(self.w)
+            print('4',self.w)
             # w = self.w.view(self.source.n, self.target.n)
             # print(self.norm / w.sum(0).view(1, -1),(self.norm / (w.sum(0).view(1, -1))).shape)
             # print(w.sum(0).view(1, -1))
