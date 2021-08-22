@@ -662,12 +662,13 @@ class LocalConnection(AbstractConnection):
         """
         if self.norm is not None:
             w = self.w.view(self.source.n, self.target.n)
-            print(torch.eq(w, self.w))
-            print(self.norm / self.w.sum(0).view(1, -1),(self.norm / (self.w.sum(0).view(1, -1))).shape)
-            print(self.w.sum(0).view(1, -1))
-            self.w = w *  self.norm / self.w.sum(0).view(1, -1)
+            print(self.norm / w.sum(0).view(1, -1),(self.norm / (w.sum(0).view(1, -1))).shape)
+            print(w.sum(0).view(1, -1))
+            self.w.data = w *  self.norm / w.sum(0).view(1, -1)
+            del w 
             print('just after normalize',self.w)
             print('after normalization',self.w.sum(0).view(1, -1))
+
     def normalize_meh(self) -> None:
         # language=rst
         """
