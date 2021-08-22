@@ -665,7 +665,7 @@ class LocalConnection(AbstractConnection):
             print(w[:,0],w[:,0].shape)
             print(self.w.sum(0).view(1, -1),(self.norm / (self.w.sum(0).view(1, -1))).shape)
             w *= self.norm / self.w.sum(0).view(1, -1)
-            
+            print('just after normalize',w)
     def normalize_meh(self) -> None:
         # language=rst
         """
