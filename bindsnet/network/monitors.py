@@ -70,8 +70,8 @@ class Monitor(AbstractMonitor):
 
         """
         return_logs = torch.cat(self.recording[var], 0)
-        if self.time is None:
-            self.recording[var] = []
+        # if self.time is None:
+        #     self.recording[var] = []
         return return_logs
 
     def record(self, **kwargs) -> None:
