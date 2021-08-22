@@ -70,9 +70,8 @@ class Monitor(AbstractMonitor):
 
         """
         return_logs = torch.cat(self.recording[var], 0)
-        # if self.time is None:
-        #     pass
-            #self.recording[var] = []
+        if self.time is None:
+            self.recording[var] = []
         return return_logs
 
     def record(self, **kwargs) -> None:
@@ -437,15 +436,25 @@ class TensorBoardMonitor(AbstractMonitor):
         Add weights histograms to the SummeryWriter.
         """
         for c in self.connections:
-            self.writer.add_histogram(
-                f'{c[0]} to {c[1]}/Weights',
-                torch.as_tensor(self.network.connections[c].w.tolist()),
-                self.step
-                )
-            if self.network.connections[c].b is not None:
+            if hasattr(c, 'mask'):
+                self.writer.add_histogram(
+                    f'{c[0]} to {c[1]}/Weights',
+                    (self.network.connections[c].w)[c.mask.logical_not()].clone(),
+                    self.step
+                    )
+            else:
+                self.writer.add_histogram(
+                    f'{c[0]} to {c[1]}/Weights',
+                    self.network.connections[c].w.clone(),
+                    self.step
+                    )
+            if (
+                self.network.connections[c].b is not None 
+                and self.network.connections[c].b.any()
+            ):
                 self.writer.add_histogram(
                     f'{c[0]} to {c[1]}/Biases',
-                    torch.as_tensor(self.network.connections[c].b.tolist()),
+                    self.network.connections[c].b.clone(),
                     self.step
                     )
 
