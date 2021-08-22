@@ -661,13 +661,16 @@ class LocalConnection(AbstractConnection):
         ``self.norm``.
         """
         if self.norm is not None:
-            w = self.w.view(self.source.n, self.target.n)
-            print(self.norm / w.sum(0).view(1, -1),(self.norm / (w.sum(0).view(1, -1))).shape)
-            print(w.sum(0).view(1, -1))
-            self.w.data = w *  self.norm / w.sum(0).view(1, -1)
-            del w 
-            print('just after normalize',self.w)
-            print('after normalization',self.w.sum(0).view(1, -1))
+            w_abs_sum = self.w.abs().sum(0).unsqueeze(0)
+            w_abs_sum[w_abs_sum == 0] = 1.0
+            self.w *= self.norm / w_abs_sum
+            # w = self.w.view(self.source.n, self.target.n)
+            # print(self.norm / w.sum(0).view(1, -1),(self.norm / (w.sum(0).view(1, -1))).shape)
+            # print(w.sum(0).view(1, -1))
+            # self.w.data = w *  self.norm / w.sum(0).view(1, -1)
+            # del w 
+            # print('just after normalize',self.w)
+            # print('after normalization',self.w.sum(0).view(1, -1))
 
     def normalize_meh(self) -> None:
         # language=rst
