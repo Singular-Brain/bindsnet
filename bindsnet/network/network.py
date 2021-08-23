@@ -419,7 +419,6 @@ class Network(torch.nn.Module):
                     if clamp.ndimension() == 1:
                         self.layers[l].s[:, clamp] = 1
                     else:
-                        print('self.layers[l]',self.layers[l].s[:, clamp[t]])
                         self.layers[l].s[:, clamp[t]] = 1
 
                 # Clamp neurons not to spike.
