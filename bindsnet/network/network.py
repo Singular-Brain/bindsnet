@@ -331,6 +331,7 @@ class Network(torch.nn.Module):
         )
         # Parse keyword arguments.
         clamps = kwargs.get("clamp", {})
+        print(clamps)
         unclamps = kwargs.get("unclamp", {})
         masks = kwargs.get("masks", {})
         injects_v = kwargs.get("injects_v", {})
@@ -416,6 +417,7 @@ class Network(torch.nn.Module):
                 # Clamp neurons to spike.
                 clamp = clamps.get(l, None)
                 if clamp is not None:
+                    print('*')
                     if clamp.ndimension() == 1:
                         self.layers[l].s[:, clamp] = 1
                         print(self.layers[l].s[:, clamp])
