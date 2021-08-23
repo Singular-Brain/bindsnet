@@ -418,6 +418,7 @@ class Network(torch.nn.Module):
                 if clamp is not None:
                     if clamp.ndimension() == 1:
                         self.layers[l].s[:, clamp] = 1
+                        print(self.layers[l].s[:, clamp])
                     else:
                         self.layers[l].s[:, clamp[t]] = 1
 
