@@ -784,7 +784,7 @@ class LocalConnection(AbstractConnection):
         if self.wmin != -np.inf or self.wmax != np.inf:
             w = torch.clamp(w, self.wmin, self.wmax)
 
-        w = w.unsqueeze(0).repeat(self.target.batch_size, 1, 1) #batch size
+        w = w.unsqueeze(0).repeat(self.target.batch_size, 1, 1, 1) #batch size
         self.w = Parameter(w, requires_grad=False)
         self.b = Parameter(kwargs.get("b", None), requires_grad=False)
 
@@ -802,15 +802,25 @@ class LocalConnection(AbstractConnection):
         # s: batch, ch_in, w_in, h_in => s_unfold: batch, ch_in, ch_out * w_out * h_out, k ** 2
         # w: ch_in, ch_out * w_out * h_out, k ** 2
         # a_post: batch, ch_in, ch_out * w_out * h_out, k ** 2 => batch, ch_out * w_out * h_out (= target.n)
-        s_unfold = s.unfold(0,self.kernel_size[0],self.stride).unfold(1,self.kernel_size[1],self.stride).reshape(
+        print(s.shape, self.kernel_size)
+        s_unfold = s.unfold(
+            -2,self.kernel_size[0],self.stride[0]
+        ).unfold(
+            -2,self.kernel_size[1],self.stride[1]
+        ).reshape(
             s.shape[0], 
             self.in_channels, 
-            self.out_channels * self.conv_prod,
-            self.kernel_prod
-            )
+            self.conv_prod,
+            self.kernel_prod,
+        ).repeat(
+            1,
+            1,
+            self.out_channels,
+            1,
+        )
         a_post = s_unfold * self.w #.unsqueeze(0).repeat(self.target.batch_size, 1, 1)
         return a_post.sum(-1).sum(1).view(
-            a_post.shape[0], self.out_channels, self.kernel_size[0], self.kernel_size[1]
+            a_post.shape[0], self.out_channels, *self.conv_size,
             )
 
     def update(self, **kwargs) -> None:
