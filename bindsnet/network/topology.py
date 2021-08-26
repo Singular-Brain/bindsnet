@@ -784,7 +784,7 @@ class LocalConnection(AbstractConnection):
         if self.wmin != -np.inf or self.wmax != np.inf:
             w = torch.clamp(w, self.wmin, self.wmax)
 
-        self.w = self.w.unsqueeze(0).repeat(self.target.batch_size, 1, 1) #batch size
+        w = w.unsqueeze(0).repeat(self.target.batch_size, 1, 1) #batch size
         self.w = Parameter(w, requires_grad=False)
         self.b = Parameter(kwargs.get("b", None), requires_grad=False)
 
