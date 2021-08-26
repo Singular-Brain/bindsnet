@@ -191,6 +191,7 @@ class PostPre(LearningRule):
                 "This learning rule is not supported for this Connection type."
             )
 
+
     def _connection_update(self, **kwargs) -> None:
         # language=rst
         """
@@ -228,7 +229,7 @@ class PostPre(LearningRule):
         batch_size = self.source.batch_size
         kernel_width = self.connection.kernel_size[0]
         kernel_height = self.connection.kernel_size[1]
-        in_channels = self.conncetion.in_channels
+        in_channels = self.connection.in_channels
         out_channels = self.connection.out_channels
         width_out = self.connection.conv_size[0]
         height_out = self.connection.conv_size[1]
