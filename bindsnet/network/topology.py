@@ -499,189 +499,189 @@ class MaxPool2dConnection(AbstractConnection):
         self.firing_rates = torch.zeros(self.source.s.shape)
 
 
-# class LocalConnection(AbstractConnection):
-#     # language=rst
-#     """
-#     Specifies a locally connected connection between one or two populations of neurons.
-#     """
+class LocalConnectionOrig(AbstractConnection):
+    # language=rst
+    """
+    Specifies a locally connected connection between one or two populations of neurons.
+    """
 
-#     def __init__(
-#         self,
-#         source: Nodes,
-#         target: Nodes,
-#         kernel_size: Union[int, Tuple[int, int]],
-#         stride: Union[int, Tuple[int, int]],
-#         n_filters: int,
-#         nu: Optional[Union[float, Sequence[float]]] = None,
-#         reduction: Optional[callable] = None,
-#         weight_decay: float = 0.0,
-#         **kwargs
-#     ) -> None:
-#         # language=rst
-#         """
-#         Instantiates a ``LocalConnection`` object. Source population should be
-#         two-dimensional.
+    def __init__(
+        self,
+        source: Nodes,
+        target: Nodes,
+        kernel_size: Union[int, Tuple[int, int]],
+        stride: Union[int, Tuple[int, int]],
+        n_filters: int,
+        nu: Optional[Union[float, Sequence[float]]] = None,
+        reduction: Optional[callable] = None,
+        weight_decay: float = 0.0,
+        **kwargs
+    ) -> None:
+        # language=rst
+        """
+        Instantiates a ``LocalConnection`` object. Source population should be
+        two-dimensional.
 
-#         Neurons in the post-synaptic population are ordered by receptive field; that is,
-#         if there are ``n_conv`` neurons in each post-synaptic patch, then the first
-#         ``n_conv`` neurons in the post-synaptic population correspond to the first
-#         receptive field, the second ``n_conv`` to the second receptive field, and so on.
+        Neurons in the post-synaptic population are ordered by receptive field; that is,
+        if there are ``n_conv`` neurons in each post-synaptic patch, then the first
+        ``n_conv`` neurons in the post-synaptic population correspond to the first
+        receptive field, the second ``n_conv`` to the second receptive field, and so on.
 
-#         :param source: A layer of nodes from which the connection originates.
-#         :param target: A layer of nodes to which the connection connects.
-#         :param kernel_size: Horizontal and vertical size of convolutional kernels.
-#         :param stride: Horizontal and vertical stride for convolution.
-#         :param n_filters: Number of locally connected filters per pre-synaptic region.
-#         :param nu: Learning rate for both pre- and post-synaptic events.
-#         :param reduction: Method for reducing parameter updates along the minibatch
-#             dimension.
-#         :param weight_decay: Constant multiple to decay weights by on each iteration.
+        :param source: A layer of nodes from which the connection originates.
+        :param target: A layer of nodes to which the connection connects.
+        :param kernel_size: Horizontal and vertical size of convolutional kernels.
+        :param stride: Horizontal and vertical stride for convolution.
+        :param n_filters: Number of locally connected filters per pre-synaptic region.
+        :param nu: Learning rate for both pre- and post-synaptic events.
+        :param reduction: Method for reducing parameter updates along the minibatch
+            dimension.
+        :param weight_decay: Constant multiple to decay weights by on each iteration.
 
-#         Keyword arguments:
+        Keyword arguments:
 
-#         :param LearningRule update_rule: Modifies connection parameters according to
-#             some rule.
-#         :param torch.Tensor w: Strengths of synapses.
-#         :param torch.Tensor b: Target population bias.
-#         :param float wmin: Minimum allowed value on the connection weights.
-#         :param float wmax: Maximum allowed value on the connection weights.
-#         :param float norm: Total weight per target neuron normalization constant.
-#         :param Tuple[int, int] input_shape: Shape of input population if it's not
-#             ``[sqrt, sqrt]``.
-#         """
-#         super().__init__(source, target, nu, reduction, weight_decay, **kwargs)
+        :param LearningRule update_rule: Modifies connection parameters according to
+            some rule.
+        :param torch.Tensor w: Strengths of synapses.
+        :param torch.Tensor b: Target population bias.
+        :param float wmin: Minimum allowed value on the connection weights.
+        :param float wmax: Maximum allowed value on the connection weights.
+        :param float norm: Total weight per target neuron normalization constant.
+        :param Tuple[int, int] input_shape: Shape of input population if it's not
+            ``[sqrt, sqrt]``.
+        """
+        super().__init__(source, target, nu, reduction, weight_decay, **kwargs)
 
-#         kernel_size = _pair(kernel_size)
-#         stride = _pair(stride)
+        kernel_size = _pair(kernel_size)
+        stride = _pair(stride)
 
-#         self.kernel_size = kernel_size
-#         self.stride = stride
-#         self.n_filters = n_filters
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.n_filters = n_filters
 
-#         shape = kwargs.get("input_shape", None)
-#         if shape is None:
-#             sqrt = int(np.sqrt(source.n))
-#             shape = _pair(sqrt)
+        shape = kwargs.get("input_shape", None)
+        if shape is None:
+            sqrt = int(np.sqrt(source.n))
+            shape = _pair(sqrt)
 
-#         if kernel_size == shape:
-#             conv_size = [1, 1]
-#         else:
-#             conv_size = (
-#                 int((shape[0] - kernel_size[0]) / stride[0]) + 1,
-#                 int((shape[1] - kernel_size[1]) / stride[1]) + 1,
-#             )
+        if kernel_size == shape:
+            conv_size = [1, 1]
+        else:
+            conv_size = (
+                int((shape[0] - kernel_size[0]) / stride[0]) + 1,
+                int((shape[1] - kernel_size[1]) / stride[1]) + 1,
+            )
 
-#         self.conv_size = conv_size
+        self.conv_size = conv_size
 
-#         conv_prod = int(np.prod(conv_size))
-#         kernel_prod = int(np.prod(kernel_size))
+        conv_prod = int(np.prod(conv_size))
+        kernel_prod = int(np.prod(kernel_size))
 
-#         assert (
-#             target.n == n_filters * conv_prod
-#         ), "Target layer size must be n_filters * (kernel_size ** 2)."
+        assert (
+            target.n == n_filters * conv_prod
+        ), "Target layer size must be n_filters * (kernel_size ** 2)."
 
-#         locations = torch.zeros(
-#             kernel_size[0], kernel_size[1], conv_size[0], conv_size[1]
-#         ).long()
-#         for c1 in range(conv_size[0]):
-#             for c2 in range(conv_size[1]):
-#                 for k1 in range(kernel_size[0]):
-#                     for k2 in range(kernel_size[1]):
-#                         location = (
-#                             c1 * stride[0] * shape[1]
-#                             + c2 * stride[1]
-#                             + k1 * shape[0]
-#                             + k2
-#                         )
-#                         locations[k1, k2, c1, c2] = location
+        locations = torch.zeros(
+            kernel_size[0], kernel_size[1], conv_size[0], conv_size[1]
+        ).long()
+        for c1 in range(conv_size[0]):
+            for c2 in range(conv_size[1]):
+                for k1 in range(kernel_size[0]):
+                    for k2 in range(kernel_size[1]):
+                        location = (
+                            c1 * stride[0] * shape[1]
+                            + c2 * stride[1]
+                            + k1 * shape[0]
+                            + k2
+                        )
+                        locations[k1, k2, c1, c2] = location
 
-#         self.register_buffer("locations", locations.view(kernel_prod, conv_prod))
-#         w = kwargs.get("w", None)
+        self.register_buffer("locations", locations.view(kernel_prod, conv_prod))
+        w = kwargs.get("w", None)
 
-#         if w is None:
-#             w = torch.zeros(source.n, target.n)
-#             for f in range(n_filters):
-#                 for c in range(conv_prod):
-#                     for k in range(kernel_prod):
-#                         if self.wmin == -np.inf or self.wmax == np.inf:
-#                             w[self.locations[k, c], f * conv_prod + c] = np.clip(
-#                                 np.random.rand(), self.wmin, self.wmax
-#                             )
-#                         else:
-#                             w[
-#                                 self.locations[k, c], f * conv_prod + c
-#                             ] = self.wmin + np.random.rand() * (self.wmax - self.wmin)
-#         else:
-#             if self.wmin != -np.inf or self.wmax != np.inf:
-#                 w = torch.clamp(w, self.wmin, self.wmax)
+        if w is None:
+            w = torch.zeros(source.n, target.n)
+            for f in range(n_filters):
+                for c in range(conv_prod):
+                    for k in range(kernel_prod):
+                        if self.wmin == -np.inf or self.wmax == np.inf:
+                            w[self.locations[k, c], f * conv_prod + c] = np.clip(
+                                np.random.rand(), self.wmin, self.wmax
+                            )
+                        else:
+                            w[
+                                self.locations[k, c], f * conv_prod + c
+                            ] = self.wmin + np.random.rand() * (self.wmax - self.wmin)
+        else:
+            if self.wmin != -np.inf or self.wmax != np.inf:
+                w = torch.clamp(w, self.wmin, self.wmax)
 
-#         self.w = Parameter(w, requires_grad=False)
+        self.w = Parameter(w, requires_grad=False)
 
-#         self.register_buffer("mask", self.w == 0)
+        self.register_buffer("mask", self.w == 0)
 
-#         self.b = Parameter(kwargs.get("b", torch.zeros(target.n)), requires_grad=False)
+        self.b = Parameter(kwargs.get("b", torch.zeros(target.n)), requires_grad=False)
 
-#         if self.norm is not None:
-#             self.norm *= kernel_prod
+        if self.norm is not None:
+            self.norm *= kernel_prod
 
-#     def compute(self, s: torch.Tensor) -> torch.Tensor:
-#         # language=rst
-#         """
-#         Compute pre-activations given spikes using layer weights.
+    def compute(self, s: torch.Tensor) -> torch.Tensor:
+        # language=rst
+        """
+        Compute pre-activations given spikes using layer weights.
 
-#         :param s: Incoming spikes.
-#         :return: Incoming spikes multiplied by synaptic weights (with or without
-#             decaying spike activation).
-#         """
-#         # Compute multiplication of pre-activations by connection weights.
-#         #print(self, s.device, self.w.device, self.b.device)
-#         a_post = (
-#             s.float().view(s.size(0), -1).to(self.w.device) @ self.w.view(self.source.n, self.target.n)
-#             + self.b
-#         )
-#         return a_post.view(*self.target.shape)
+        :param s: Incoming spikes.
+        :return: Incoming spikes multiplied by synaptic weights (with or without
+            decaying spike activation).
+        """
+        # Compute multiplication of pre-activations by connection weights.
+        #print(self, s.device, self.w.device, self.b.device)
+        a_post = (
+            s.float().view(s.size(0), -1).to(self.w.device) @ self.w.view(self.source.n, self.target.n)
+            + self.b
+        )
+        return a_post.view(*self.target.shape)
 
-#     def update(self, **kwargs) -> None:
-#         # language=rst
-#         """
-#         Compute connection's update rule.
+    def update(self, **kwargs) -> None:
+        # language=rst
+        """
+        Compute connection's update rule.
 
-#         Keyword arguments:
+        Keyword arguments:
 
-#         :param ByteTensor mask: Boolean mask determining which weights to clamp to zero.
-#         """
-#         if kwargs["mask"] is None:
-#             kwargs["mask"] = self.mask
-#         super().update(**kwargs)
+        :param ByteTensor mask: Boolean mask determining which weights to clamp to zero.
+        """
+        if kwargs["mask"] is None:
+            kwargs["mask"] = self.mask
+        super().update(**kwargs)
 
-#     def normalize(self) -> None:
-#         # language=rst
-#         """
-#         Normalize weights so each target neuron has sum of connection weights equal to
-#         ``self.norm``.
-#         """
-#         if self.norm is not None:
-#             w = self.w.view(self.source.n, self.target.n)
-#             print(w[0,:],w.shape)
-#             w *= self.norm / self.w.sum(0).view(1, -1)
-#             print(self.norm / (self.w.sum(0).view(1, -1)),(self.norm / (self.w.sum(0).view(1, -1))).shape)
-#     def normalize_meh(self) -> None:
-#         # language=rst
-#         """
-#         Normalize weights so each target neuron has sum of connection weights equal to
-#         ``self.norm``.
-#         """
-#         if self.norm is not None:
-#             w_sum = self.w.sum(0).unsqueeze(0)
-#             #w_abs_sum[w_abs_sum == 0] = 1.0
-#             self.w *= self.norm / w_sum
+    def normalize(self) -> None:
+        # language=rst
+        """
+        Normalize weights so each target neuron has sum of connection weights equal to
+        ``self.norm``.
+        """
+        if self.norm is not None:
+            w = self.w.view(self.source.n, self.target.n)
+            print(w[0,:],w.shape)
+            w *= self.norm / self.w.sum(0).view(1, -1)
+            print(self.norm / (self.w.sum(0).view(1, -1)),(self.norm / (self.w.sum(0).view(1, -1))).shape)
+    def normalize_meh(self) -> None:
+        # language=rst
+        """
+        Normalize weights so each target neuron has sum of connection weights equal to
+        ``self.norm``.
+        """
+        if self.norm is not None:
+            w_sum = self.w.sum(0).unsqueeze(0)
+            #w_abs_sum[w_abs_sum == 0] = 1.0
+            self.w *= self.norm / w_sum
 
-#     def reset_state_variables(self) -> None:
-#         # language=rst
-#         """
-#         Contains resetting logic for the connection.
-#         """
-#         super().reset_state_variables()
+    def reset_state_variables(self) -> None:
+        # language=rst
+        """
+        Contains resetting logic for the connection.
+        """
+        super().reset_state_variables()
 
 
 
