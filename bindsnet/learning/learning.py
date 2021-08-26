@@ -567,6 +567,11 @@ class MSTDP(LearningRule):
         """
         batch_size = self.source.batch_size
 
+        self.pred_label = kwargs['pred_label']
+        self.local_rewarding = kwargs['local_rewarding']
+        self.neuron_per_class = kwargs['neuron_per_class']
+        self.target_name = kwargs['target_name']
+
         # Initialize eligibility, P^+, and P^-.
         if not hasattr(self, "p_plus"):
             self.p_plus = torch.zeros(
@@ -606,10 +611,13 @@ class MSTDP(LearningRule):
         if self.local_rewarding == True and self.target_name.startswith('output') and self.pred_label is not None:
             self.pred_label_mask = torch.zeros(*self.connection.w.shape).to(self.connection.w.device)
             self.pred_label_mask[...,self.pred_label*self.neuron_per_class:(self.pred_label+1)*self.neuron_per_class] = 1.0
-            # print(self.pred_label_mask)
-            # print(self.connection.w)
+            #print(self.pred_label)
+            #tmp = self.connection.w[...,self.pred_label*self.neuron_per_class:(self.pred_label+1)*self.neuron_per_class].sum()
+            #print(tmp, self.connection.w.sum()-tmp)
             #print(self.connection.w[...,self.pred_label*self.neuron_per_class], self.connection.w[...,(self.pred_label+1)*self.neuron_per_class])
             self.connection.w += (self.pred_label_mask*self.nu[0] * self.reduction(update, dim=0))*self.soft_bound_decay()
+            #tmp = self.connection.w[...,self.pred_label*self.neuron_per_class:(self.pred_label+1)*self.neuron_per_class].sum()
+            #print(tmp, self.connection.w.sum()-tmp)
             #print(self.connection.w[...,self.pred_label*self.neuron_per_class],self.connection.w[...,(self.pred_label+1)*self.neuron_per_class])
             #print(self.connection.w)
         else:
@@ -811,14 +819,20 @@ class MSTDPET(LearningRule):
         self.eligibility_trace += self.eligibility / self.tc_e_trace
         # Compute weight update.
         if self.local_rewarding == True and self.target_name.startswith('output') and self.pred_label is not None:
+            
             self.pred_label_mask = torch.zeros(*self.connection.w.shape).to(self.connection.w.device)
             self.pred_label_mask[...,self.pred_label*self.neuron_per_class:(self.pred_label+1)*self.neuron_per_class] = 1.0
+            #print(self.pred_label)
+            #tmp = self.connection.w[...,self.pred_label*self.neuron_per_class:(self.pred_label+1)*self.neuron_per_class].sum()
+            #print(tmp, self.connection.w.sum()-tmp)
             # print(self.pred_label_mask)
             # print(self.connection.w)
             #print(self.connection.w[...,self.pred_label*self.neuron_per_class], self.connection.w[...,(self.pred_label+1)*self.neuron_per_class])
             self.connection.w += self.pred_label_mask*(
                 self.nu[0] * self.connection.dt * reward * self.eligibility_trace
             )*self.soft_bound_decay()
+            #tmp = self.connection.w[...,self.pred_label*self.neuron_per_class:(self.pred_label+1)*self.neuron_per_class].sum()
+            #print(tmp, self.connection.w.sum()-tmp)
             #print(self.connection.w[...,self.pred_label*self.neuron_per_class], self.connection.w[...,(self.pred_label+1)*self.neuron_per_class])
             #print(self.connection.w)
         else:
