@@ -240,17 +240,18 @@ class PostPre(LearningRule):
 
 
         ## target_x (s) ch_o, w_o, h_o  
-
+        target_x = self.target.x.reshape(batch_size, out_channels, width_out*height_out).repeat(batch_size, width_out*height_out, 1)
+        source_s = im2col_indices(self.source.s.type(torch.float), kernel_width, kernel_height, stride=stride, padding=padding).permute(0,2,1)
+        target_s = self.target.s.type(torch.float).reshape(batch_size, out_channels, width_out*height_out).repeat(batch_size, width_out*height_out, 1)
+        source_x = im2col_indices(self.source.x, kernel_width, kernel_height, stride=stride, padding=padding).permute(0,2,1)
         # Pre-synaptic update.
         if self.nu[0]:
-            pre = self.reduction(torch.bmm(self.target.x.reshape(batch_size, out_channels, width_out*height_out).repeat(batch_size, width_out*height_out, 1),\
-                 im2col_indices(self.source.s, (kernel_width, kernel_height), stride=stride, padding=padding)).permute(0,2,1), dim=0)
+            pre = self.reduction(torch.bmm(target_x,source_s), dim=0)
             self.connection.w -= self.nu[0] * pre.view(self.connection.w.size())
 
         # Post-synaptic update.
         if self.nu[1]:
-            post = self.reduction(torch.bmm(self.target.s.reshape(batch_size, out_channels, width_out*height_out).repeat(batch_size, width_out*height_out, 1),\
-                 im2col_indices(self.source.x, (kernel_width, kernel_height), stride=stride, padding=padding)).permute(0,2,1), dim=0)
+            post = self.reduction(torch.bmm(target_s, source_x),dim=0)
             self.connection.w += self.nu[1] * post.view(self.connection.w.size())
 
         super().update()

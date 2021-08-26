@@ -785,7 +785,7 @@ class LocalConnection(AbstractConnection):
         if self.wmin != -np.inf or self.wmax != np.inf:
             w = torch.clamp(w, self.wmin, self.wmax)
 
-        w = w.unsqueeze(0).repeat(self.target.batch_size, 1, 1, 1) #batch size
+        # w = w.unsqueeze(0).repeat(self.target.batch_size, 1, 1, 1) #batch size
         self.w = Parameter(w, requires_grad=False)
         self.b = Parameter(kwargs.get("b", None), requires_grad=False)
 
@@ -818,7 +818,7 @@ class LocalConnection(AbstractConnection):
             self.out_channels,
             1,
         )
-        a_post = self.s_unfold * self.w #.unsqueeze(0).repeat(self.target.batch_size, 1, 1)
+        a_post = self.s_unfold * self.w.unsqueeze(0).repeat(self.target.batch_size, 1, 1, 1)
         return a_post.sum(-1).sum(1).view(
             a_post.shape[0], self.out_channels, *self.conv_size,
             )
@@ -837,10 +837,21 @@ class LocalConnection(AbstractConnection):
         ``self.norm``.
         """
         if self.norm is not None:
-            w = self.w.view(self.source.n, self.target.n)
-            print(w[0,:],w.shape)
-            w *= self.norm / self.w.sum(0).view(1, -1)
-            print(self.norm / (self.w.sum(0).view(1, -1)),(self.norm / (self.w.sum(0).view(1, -1))).shape)
+            # get a view and modify in-place
+            # w: ch_in, ch_out * w_out * h_out, k ** 2
+
+            w = self.w.view(
+                self.w.shape[0]*self.w.shape[1], self.w.shape[2]
+            )
+
+            for fltr in range(w.shape[0]):
+                w[fltr,:] *= self.norm / w[fltr,:].sum(0)
+
+        # if self.norm is not None:
+        #     w = self.w.view(self.source.n, self.target.n)
+        #     print(w[0,:],w.shape)
+        #     w *= self.norm / self.w.sum(0).view(1, -1)
+        #     print(self.norm / (self.w.sum(0).view(1, -1)),(self.norm / (self.w.sum(0).view(1, -1))).shape)
 
     def reset_state_variables(self) -> None:
         # language=rst
