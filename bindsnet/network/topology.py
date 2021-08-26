@@ -755,18 +755,16 @@ class LocalConnection(AbstractConnection):
             conv_size = [1, 1]
         else:
             conv_size = (
-                int((shape[0] - kernel_size[0]) / stride[0]) + 1,
-                int((shape[1] - kernel_size[1]) / stride[1]) + 1,
+                (shape[0] - kernel_size[0]) // stride[0] + 1,
+                (shape[1] - kernel_size[1]) // stride[1] + 1,
             )
 
         self.conv_size = conv_size
-        conv_prod = int(np.prod(conv_size))
+        self.conv_prod = int(np.prod(conv_size))
         self.kernel_prod = int(np.prod(kernel_size))
-        self.w_out = (source.shape[0]-kernel_size) // stride + 1
-        self.h_out = (source.shape[1]-kernel_size) // stride + 1
          
         assert (
-            target.n == out_channels * conv_prod
+            target.n == out_channels * self.conv_prod
         ), "Target layer size must be n_filters * (kernel_size ** 2)."
 
         w = kwargs.get("w", None)
@@ -774,14 +772,14 @@ class LocalConnection(AbstractConnection):
         if w is None:
             w = torch.rand(
                 self.in_channels, 
-                self.out_channels * self.w_out * self.h_out,
-                self.kernel_size ** 2
+                self.out_channels * self.conv_prod,
+                self.kernel_prod
             )
         else:
             assert w.shape == (
                 self.in_channels, 
-                self.out_channels * self.w_out * self.h_out,
-                self.kernel_size ** 2
+                self.out_channels * self.conv_prod,
+                self.kernel_prod
                 )
         if self.wmin != -np.inf or self.wmax != np.inf:
             w = torch.clamp(w, self.wmin, self.wmax)
@@ -804,15 +802,15 @@ class LocalConnection(AbstractConnection):
         # s: batch, ch_in, w_in, h_in => s_unfold: batch, ch_in, ch_out * w_out * h_out, k ** 2
         # w: ch_in, ch_out * w_out * h_out, k ** 2
         # a_post: batch, ch_in, ch_out * w_out * h_out, k ** 2 => batch, ch_out * w_out * h_out (= target.n)
-        s_unfold = s.unfold(0,self.kernel_size,self.stride).unfold(1,self.kernel_size,self.stride).reshape(
+        s_unfold = s.unfold(0,self.kernel_size[0],self.stride).unfold(1,self.kernel_size[1],self.stride).reshape(
             s.shape[0], 
             self.in_channels, 
-            self.out_channels * self.w_out * self.h_out,
+            self.out_channels * self.conv_prod,
             self.kernel_prod
             )
         a_post = s_unfold * self.w #.unsqueeze(0).repeat(self.target.batch_size, 1, 1)
         return a_post.sum(-1).sum(1).view(
-            a_post.shape[0], self.out_channels, self.kernel_size, self.kernel_size
+            a_post.shape[0], self.out_channels, self.kernel_size[0], self.kernel_size[1]
             )
 
     def update(self, **kwargs) -> None:
