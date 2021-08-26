@@ -745,6 +745,7 @@ class LocalConnection(AbstractConnection):
         self.stride = stride
         self.in_channels = in_channels
         self.out_channels = out_channels
+        self.padding = kwargs.get('padding', 0)
 
         shape = kwargs.get("input_shape", None)
         if shape is None:
@@ -802,7 +803,7 @@ class LocalConnection(AbstractConnection):
         # s: batch, ch_in, w_in, h_in => s_unfold: batch, ch_in, ch_out * w_out * h_out, k ** 2
         # w: ch_in, ch_out * w_out * h_out, k ** 2
         # a_post: batch, ch_in, ch_out * w_out * h_out, k ** 2 => batch, ch_out * w_out * h_out (= target.n)
-        s_unfold = s.unfold(
+        self.s_unfold = s.unfold(
             -2,self.kernel_size[0],self.stride[0]
         ).unfold(
             -2,self.kernel_size[1],self.stride[1]
@@ -817,7 +818,7 @@ class LocalConnection(AbstractConnection):
             self.out_channels,
             1,
         )
-        a_post = s_unfold * self.w #.unsqueeze(0).repeat(self.target.batch_size, 1, 1)
+        a_post = self.s_unfold * self.w #.unsqueeze(0).repeat(self.target.batch_size, 1, 1)
         return a_post.sum(-1).sum(1).view(
             a_post.shape[0], self.out_channels, *self.conv_size,
             )

@@ -180,10 +180,12 @@ class PostPre(LearningRule):
             self.source.traces and self.target.traces
         ), "Both pre- and post-synaptic nodes must record spike traces."
 
-        if isinstance(connection, (Connection, LocalConnection)):
+        if isinstance(connection, (Connection)):
             self.update = self._connection_update
         elif isinstance(connection, Conv2dConnection):
             self.update = self._conv2d_connection_update
+        elif isinstance(connection, LocalConnection):
+            self.update = self._local_connection_update
         else:
             raise NotImplementedError(
                 "This learning rule is not supported for this Connection type."
@@ -212,6 +214,43 @@ class PostPre(LearningRule):
             source_x = self.source.x.view(batch_size, -1).unsqueeze(2).to(self.connection.w.device)
             self.connection.w += (self.reduction(torch.bmm(source_x, target_s), dim=0))*self.soft_bound_decay()
             del source_x, target_s
+
+        super().update()
+
+    def _local_connection_update(self, **kwargs) -> None:
+        # language=rst
+        """
+        Post-pre learning rule for ``LocalConnection`` subclass of
+        ``AbstractConnection`` class.
+        """
+        # Get LC layer parameters.
+        padding, stride = self.connection.padding, self.connection.stride
+        batch_size = self.source.batch_size
+        kernel_width = self.connection.kernel_size[0]
+        kernel_height = self.connection.kernel_size[1]
+        in_channels = self.conncetion.in_channels
+        out_channels = self.connection.out_channels
+        width_out = self.connection.conv_size[0]
+        height_out = self.connection.conv_size[1]
+
+        ## source_x (s): ch_in, w_in, h_in
+        ## s_unfold: ch_in, ch_out * w_out * h_out, k ** 2
+        
+
+
+        ## target_x (s) ch_o, w_o, h_o  
+
+        # Pre-synaptic update.
+        if self.nu[0]:
+            pre = self.reduction(torch.bmm(self.target.x.reshape(batch_size, out_channels, width_out*height_out).repeat(batch_size, width_out*height_out, 1),\
+                 im2col_indices(self.source.s, (kernel_width, kernel_height), stride=stride, padding=padding)).permute(0,2,1), dim=0)
+            self.connection.w -= self.nu[0] * pre.view(self.connection.w.size())
+
+        # Post-synaptic update.
+        if self.nu[1]:
+            post = self.reduction(torch.bmm(self.target.s.reshape(batch_size, out_channels, width_out*height_out).repeat(batch_size, width_out*height_out, 1),\
+                 im2col_indices(self.source.x, (kernel_width, kernel_height), stride=stride, padding=padding)).permute(0,2,1), dim=0)
+            self.connection.w += self.nu[1] * post.view(self.connection.w.size())
 
         super().update()
 
