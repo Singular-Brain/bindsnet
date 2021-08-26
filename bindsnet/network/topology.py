@@ -634,7 +634,6 @@ class LocalConnectionOrig(AbstractConnection):
             decaying spike activation).
         """
         # Compute multiplication of pre-activations by connection weights.
-        #print(self, s.device, self.w.device, self.b.device)
         a_post = (
             s.float().view(s.size(0), -1).to(self.w.device) @ self.w.view(self.source.n, self.target.n)
             + self.b
@@ -662,9 +661,9 @@ class LocalConnectionOrig(AbstractConnection):
         """
         if self.norm is not None:
             w = self.w.view(self.source.n, self.target.n)
-            print(w[0,:],w.shape)
+            #print(w[0,:],w.shape)
             w *= self.norm / self.w.sum(0).view(1, -1)
-            print(self.norm / (self.w.sum(0).view(1, -1)),(self.norm / (self.w.sum(0).view(1, -1))).shape)
+            #print(self.norm / (self.w.sum(0).view(1, -1)),(self.norm / (self.w.sum(0).view(1, -1))).shape)
     def normalize_meh(self) -> None:
         # language=rst
         """

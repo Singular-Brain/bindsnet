@@ -653,19 +653,11 @@ class MSTDP(LearningRule):
         if self.local_rewarding == True and self.target_name.startswith('output') and self.pred_label is not None:
             self.pred_label_mask = torch.zeros(*self.connection.w.shape).to(self.connection.w.device)
             self.pred_label_mask[...,self.pred_label*self.neuron_per_class:(self.pred_label+1)*self.neuron_per_class] = 1.0
-            #print(self.pred_label)
-            #tmp = self.connection.w[...,self.pred_label*self.neuron_per_class:(self.pred_label+1)*self.neuron_per_class].sum()
-            #print(tmp, self.connection.w.sum()-tmp)
-            #print(self.connection.w[...,self.pred_label*self.neuron_per_class], self.connection.w[...,(self.pred_label+1)*self.neuron_per_class])
             self.connection.w += (self.pred_label_mask*self.nu[0] * self.reduction(update, dim=0))*self.soft_bound_decay()
-            #tmp = self.connection.w[...,self.pred_label*self.neuron_per_class:(self.pred_label+1)*self.neuron_per_class].sum()
-            #print(tmp, self.connection.w.sum()-tmp)
-            #print(self.connection.w[...,self.pred_label*self.neuron_per_class],self.connection.w[...,(self.pred_label+1)*self.neuron_per_class])
-            #print(self.connection.w)
+
         else:
             self.connection.w += self.nu[0] * self.reduction(update, dim=0)*self.soft_bound_decay()
 
-        #print(self.connection.w)
         # Update P^+ and P^- values.
         self.p_plus *= torch.exp(-self.connection.dt / self.tc_plus).to(self.connection.w.device)
         self.p_plus += a_plus * source_s
@@ -864,19 +856,10 @@ class MSTDPET(LearningRule):
             
             self.pred_label_mask = torch.zeros(*self.connection.w.shape).to(self.connection.w.device)
             self.pred_label_mask[...,self.pred_label*self.neuron_per_class:(self.pred_label+1)*self.neuron_per_class] = 1.0
-            #print(self.pred_label)
-            #tmp = self.connection.w[...,self.pred_label*self.neuron_per_class:(self.pred_label+1)*self.neuron_per_class].sum()
-            #print(tmp, self.connection.w.sum()-tmp)
-            # print(self.pred_label_mask)
-            # print(self.connection.w)
-            #print(self.connection.w[...,self.pred_label*self.neuron_per_class], self.connection.w[...,(self.pred_label+1)*self.neuron_per_class])
             self.connection.w += self.pred_label_mask*(
                 self.nu[0] * self.connection.dt * reward * self.eligibility_trace
             )*self.soft_bound_decay()
-            #tmp = self.connection.w[...,self.pred_label*self.neuron_per_class:(self.pred_label+1)*self.neuron_per_class].sum()
-            #print(tmp, self.connection.w.sum()-tmp)
-            #print(self.connection.w[...,self.pred_label*self.neuron_per_class], self.connection.w[...,(self.pred_label+1)*self.neuron_per_class])
-            #print(self.connection.w)
+
         else:
             self.connection.w += (
                 self.nu[0] * self.connection.dt * reward * self.eligibility_trace
@@ -892,7 +875,6 @@ class MSTDPET(LearningRule):
         self.eligibility = torch.outer(self.p_plus, target_s) + torch.outer(
             source_s, self.p_minus
         )
-        #print(self.connection.w)
         super().update()
 
     def _conv2d_connection_update(self, **kwargs) -> None:
