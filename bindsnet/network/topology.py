@@ -815,6 +815,13 @@ class LocalConnection(AbstractConnection):
             a_post.shape[0], self.out_channels, self.kernel_size, self.kernel_size
             )
 
+    def update(self, **kwargs) -> None:
+        # language=rst
+        """
+        Compute connection's update rule.
+        """
+        super().update(**kwargs)
+
     def normalize(self) -> None:
         # language=rst
         """
