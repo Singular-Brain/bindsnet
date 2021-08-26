@@ -521,12 +521,10 @@ class LocalConnectionOrig(AbstractConnection):
         """
         Instantiates a ``LocalConnection`` object. Source population should be
         two-dimensional.
-
         Neurons in the post-synaptic population are ordered by receptive field; that is,
         if there are ``n_conv`` neurons in each post-synaptic patch, then the first
         ``n_conv`` neurons in the post-synaptic population correspond to the first
         receptive field, the second ``n_conv`` to the second receptive field, and so on.
-
         :param source: A layer of nodes from which the connection originates.
         :param target: A layer of nodes to which the connection connects.
         :param kernel_size: Horizontal and vertical size of convolutional kernels.
@@ -536,9 +534,7 @@ class LocalConnectionOrig(AbstractConnection):
         :param reduction: Method for reducing parameter updates along the minibatch
             dimension.
         :param weight_decay: Constant multiple to decay weights by on each iteration.
-
         Keyword arguments:
-
         :param LearningRule update_rule: Modifies connection parameters according to
             some rule.
         :param torch.Tensor w: Strengths of synapses.
@@ -621,19 +617,19 @@ class LocalConnectionOrig(AbstractConnection):
 
         self.b = Parameter(kwargs.get("b", torch.zeros(target.n)), requires_grad=False)
 
-        if self.norm is not None:
-            self.norm *= kernel_prod
+        # if self.norm is not None:
+        #     self.norm *= kernel_prod
 
     def compute(self, s: torch.Tensor) -> torch.Tensor:
         # language=rst
         """
         Compute pre-activations given spikes using layer weights.
-
         :param s: Incoming spikes.
         :return: Incoming spikes multiplied by synaptic weights (with or without
             decaying spike activation).
         """
         # Compute multiplication of pre-activations by connection weights.
+        #print(self, s.device, self.w.device, self.b.device)
         a_post = (
             s.float().view(s.size(0), -1).to(self.w.device) @ self.w.view(self.source.n, self.target.n)
             + self.b
@@ -644,9 +640,7 @@ class LocalConnectionOrig(AbstractConnection):
         # language=rst
         """
         Compute connection's update rule.
-
         Keyword arguments:
-
         :param ByteTensor mask: Boolean mask determining which weights to clamp to zero.
         """
         if kwargs["mask"] is None:
@@ -662,7 +656,14 @@ class LocalConnectionOrig(AbstractConnection):
         if self.norm is not None:
             w_abs_sum = self.w.abs().sum(0).unsqueeze(0)
             w_abs_sum[w_abs_sum == 0] = 1.0
-            self.w *= self.norm / w_abs_sum
+            self.w *= (self.norm / w_abs_sum)
+            # w = self.w.view(self.source.n, self.target.n)
+            # print(self.norm / w.sum(0).view(1, -1),(self.norm / (w.sum(0).view(1, -1))).shape)
+            # print(w.sum(0).view(1, -1))
+            # self.w.data = w *  self.norm / w.sum(0).view(1, -1)
+            # del w 
+            # print('just after normalize',self.w)
+            # print('after normalization',self.w.sum(0).view(1, -1))
 
     def normalize_meh(self) -> None:
         # language=rst
@@ -681,8 +682,6 @@ class LocalConnectionOrig(AbstractConnection):
         Contains resetting logic for the connection.
         """
         super().reset_state_variables()
-
-
 
 class LocalConnection(AbstractConnection):
     # language=rst
