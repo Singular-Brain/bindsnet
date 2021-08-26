@@ -819,7 +819,8 @@ class LocalConnection(AbstractConnection):
         #     1,
         # )
         #print(self.s_unfold.shape,self.w.unsqueeze(0).shape)
-        a_post = self.s_unfold * self.w.unsqueeze(0).reshape(self.w.shape[0], self.w.shape[1], self.out_channels, self.conv_prod, self.kernel_prod)
+        w_shape = self.w.shape
+        a_post = self.s_unfold * self.w.unsqueeze(0).reshape(1, w_shape[0], self.out_channels, self.conv_prod, self.kernel_prod)
         #.repeat(self.target.batch_size, 1, 1, 1)
         print(a_post.shape, a_post.sum(-1).sum(1).shape, a_post.sum(-1).sum(1).view(a_post.shape[0], self.out_channels, *self.conv_size,).shape)
         return a_post.sum(-1).sum(1).view(
