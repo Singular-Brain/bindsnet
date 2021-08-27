@@ -240,7 +240,7 @@ class PostPre(LearningRule):
 
         ## target_x (s) ch_o, w_o, h_o  
         target_x = self.target.x.reshape(batch_size, out_channels * width_out * height_out, 1) 
-        target_x = target_x * torch.eye(out_channels * width_out * height_out)
+        target_x = target_x * torch.eye(out_channels * width_out * height_out).to(self.connection.w.device())
         source_s = self.source.s.type(torch.float).unfold(-2, kernel_width,stride[0]).unfold(-2, kernel_height, stride[1]).reshape(
             batch_size, 
             width_out * height_out,
@@ -252,7 +252,7 @@ class PostPre(LearningRule):
         )
         
         target_s = self.target.s.type(torch.float).reshape(batch_size, out_channels * width_out*height_out,1)
-        target_s = target_s * torch.eye(out_channels * width_out * height_out)
+        target_s = target_s * torch.eye(out_channels * width_out * height_out).to(self.connection.w.device())
         source_x = self.source.x.unfold(-2, kernel_width,stride[0]).unfold(-2, kernel_height, stride[1]).reshape(
             batch_size, 
             width_out * height_out,
