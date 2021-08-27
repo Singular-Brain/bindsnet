@@ -410,6 +410,7 @@ class Network(torch.nn.Module):
                     current_inputs.update(self._get_inputs(layers=[l]))
 
                 if l in current_inputs:
+                    #print(l)
                     self.layers[l].forward(x=current_inputs[l])
                 else:
                     self.layers[l].forward(x=torch.zeros(self.layers[l].s.shape))
