@@ -402,7 +402,8 @@ class Network(torch.nn.Module):
                         current_inputs[l] += inputs[l][t]
                     else:
                         current_inputs[l] = inputs[l][t]
-
+                if l == 'main' and t == timesteps - 1:
+                    print(l,current_inputs[l],self.connections[('input','main')].w)
                 if one_step:
                     # Get input to this layer (one-step mode).
                     current_inputs.update(self._get_inputs(layers=[l]))
