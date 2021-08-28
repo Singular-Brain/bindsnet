@@ -183,6 +183,73 @@ def reshape_locally_connected_weights(
         return square
 
 
+def reshape_locally_connected_weights_meh(
+    w: torch.Tensor,
+    n_filters: int,
+    kernel_size: Union[int, Tuple[int, int]],
+    conv_size: Union[int, Tuple[int, int]],
+    input_sqrt: Union[int, Tuple[int, int]],
+) -> torch.Tensor:
+    # language=rst
+    """
+    Get the weights from a locally connected layer and reshape them to be two-dimensional and square.
+    :param w: Weights from a locally connected layer.
+    :param n_filters: No. of neuron filters.
+    :param kernel_size: Side length(s) of convolutional kernel.
+    :param conv_size: Side length(s) of convolution population.
+    :param input_sqrt: Sides length(s) of input neurons.
+    :return: Locally connected weights reshaped as a collection of spatially ordered square grids.
+    """
+
+    kernel_size = _pair(kernel_size)
+    conv_size = _pair(conv_size)
+    input_sqrt = _pair(input_sqrt)
+
+    k1, k2 = kernel_size
+    c1, c2 = conv_size
+    i1, i2 = input_sqrt
+    c1sqrt, c2sqrt = int(math.ceil(math.sqrt(c1))), int(math.ceil(math.sqrt(c2)))
+    fs = int(math.ceil(math.sqrt(n_filters)))
+
+    w_ = torch.zeros((n_filters * k1, k2 * c1 * c2))
+
+    for n1 in range(c1):
+        for n2 in range(c2):
+            for feature in range(n_filters):
+                n = n1 * c2 + n2
+                filter_ = w[feature, n1, n2, :, :
+                ].view(k1, k2)
+                w_[feature * k1 : (feature + 1) * k1, n * k2 : (n + 1) * k2] = filter_
+
+    if c1 == 1 and c2 == 1:
+        square = torch.zeros((i1 * fs, i2 * fs))
+
+        for n in range(n_filters):
+            square[
+                (n // fs) * i1 : ((n // fs) + 1) * i2,
+                (n % fs) * i2 : ((n % fs) + 1) * i2,
+            ] = w_[n * i1 : (n + 1) * i2]
+
+        return square
+    else:
+        square = torch.zeros((k1 * fs * c1, k2 * fs * c2))
+
+        for n1 in range(c1):
+            for n2 in range(c2):
+                for f1 in range(fs):
+                    for f2 in range(fs):
+                        if f1 * fs + f2 < n_filters:
+                            square[
+                                k1 * (n1 * fs + f1) : k1 * (n1 * fs + f1 + 1),
+                                k2 * (n2 * fs + f2) : k2 * (n2 * fs + f2 + 1),
+                            ] = w_[
+                                (f1 * fs + f2) * k1 : (f1 * fs + f2 + 1) * k1,
+                                (n1 * c2 + n2) * k2 : (n1 * c2 + n2 + 1) * k2,
+                            ]
+
+        return square
+
+
 def reshape_conv2d_weights(weights: torch.Tensor) -> torch.Tensor:
     # language=rst
     """
