@@ -379,7 +379,7 @@ def plot_locally_connected_weights(
 
 def plot_locally_connected_weights_meh(weights: torch.Tensor,
     n_filters: int,
-    in_channels: int,
+    in_chans: int,
     slice_to_plot: int,
     input_size: int,
     kernel_size: Union[int, Tuple[int, int]],
