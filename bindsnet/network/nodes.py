@@ -24,7 +24,6 @@ class Nodes(torch.nn.Module):
         trace_scale: Union[float, torch.Tensor] = 1.0,
         sum_input: bool = False,
         learning: bool = True,
-        maxPoolNodes: bool = False,
         **kwargs,
     ) -> None:
         # language=rst
@@ -67,7 +66,6 @@ class Nodes(torch.nn.Module):
         self.register_buffer("s", torch.ByteTensor())  # Spike occurrences.
 
         self.sum_input = sum_input  # Whether to sum all inputs.
-        self.maxPoolNodes = maxPoolNodes
         if self.traces:
             self.register_buffer("x", torch.Tensor())  # Firing traces.
             self.register_buffer(
@@ -109,8 +107,6 @@ class Nodes(torch.nn.Module):
             # Add current input to running sum.
             self.summed += x.float()
 
-        if self.maxPoolNodes:
-            self.v = self.reset
 
     def reset_state_variables(self) -> None:
         # language=rst

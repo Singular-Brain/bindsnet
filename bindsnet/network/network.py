@@ -241,7 +241,7 @@ class Network(torch.nn.Module):
                 # Fetch source and target populations.
                 source = self.connections[c].source
                 target = self.connections[c].target
-
+                
                 if not c[1] in inputs:
                     if isinstance(target, CSRMNodes):
                         inputs[c[1]] = torch.zeros(
@@ -403,8 +403,7 @@ class Network(torch.nn.Module):
                     else:
                         current_inputs[l] = inputs[l][t]
                         
-                # if l == 'main' and t == timesteps - 1:
-                #     print(l,current_inputs[l],self.connections[('input','main')].w)
+
                 if one_step:
                     # Get input to this layer (one-step mode).
                     current_inputs.update(self._get_inputs(layers=[l]))
@@ -415,6 +414,13 @@ class Network(torch.nn.Module):
                 else:
                     self.layers[l].forward(x=torch.zeros(self.layers[l].s.shape))
 
+
+                if l == 'maxPool1':
+                    if self.layers[l].s.sum() > 0:
+                        print(l,self.layers[l].s)
+                        print('main', self.layers['main'].s)
+
+                
                 # Clamp neurons to spike.
                 clamp = clamps.get(l, None)
                 if clamp is not None:
