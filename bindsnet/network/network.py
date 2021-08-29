@@ -264,7 +264,7 @@ class Network(torch.nn.Module):
         return inputs
 
     def run(
-        self, inputs: Dict[str, torch.Tensor], time: int, one_step=False, **kwargs
+        self, inputs: Dict[str, torch.Tensor], time: int, one_step=True, **kwargs
     ) -> None:
         # language=rst
         """
