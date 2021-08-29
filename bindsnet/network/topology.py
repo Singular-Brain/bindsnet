@@ -886,120 +886,72 @@ class LocalConnection(AbstractConnection):
 class MaxPool2dLocalConnection(AbstractConnection):
     # language=rst
     """
-    Specifies a locally connected max pooling connection between two populations of neurons.
+    Specifies max-pooling synapses between one or two populations of neurons by keeping
+    online estimates of maximally firing neurons.
     """
-
     def __init__(
         self,
         source: Nodes,
         target: Nodes,
         kernel_size: Union[int, Tuple[int, int]],
-        stride: Union[int, Tuple[int, int]],
-        in_channels: int,
+        stride: Union[int, Tuple[int, int]] = 1,
+        padding: Union[int, Tuple[int, int]] = 0,
+        dilation: Union[int, Tuple[int, int]] = 1,
         **kwargs
     ) -> None:
         # language=rst
         """
+        Instantiates a ``MaxPool2dConnection`` object.
 
+        :param source: A layer of nodes from which the connection originates.
+        :param target: A layer of nodes to which the connection connects.
+        :param kernel_size: Horizontal and vertical size of convolutional kernels.
+        :param stride: Horizontal and vertical stride for convolution.
+        :param padding: Horizontal and vertical padding for convolution.
+        :param dilation: Horizontal and vertical dilation for convolution.
+
+        Keyword arguments:
+
+        :param decay: Decay rate of online estimates of average firing activity.
         """
-        super().__init__(source, target, **kwargs)
+        super().__init__(source, target, None, None, 0.0, **kwargs)
 
-        kernel_size = _pair(kernel_size)
-        
         self.kernel_size = _pair(kernel_size)
         self.stride = _pair(stride)
-        self.in_channels = in_channels
-        self.out_channels = in_channels
-        self.padding = kwargs.get('padding', 0)
+        self.padding = _pair(padding)
+        self.dilation = _pair(dilation)
 
-        if "input_shape" not in kwargs.keys():
-            raise ValueError("Please specify the layer square input shape")
-
-        shape = kwargs["input_shape"]
-
-        if shape is None:
-            sqrt = int(np.sqrt(source.n))
-            shape = _pair(sqrt)
-
-        if kernel_size == shape:
-            conv_size = [1, 1]
-        else:
-            conv_size = (
-                (shape[0] - kernel_size[0]) // self.stride[0] + 1,
-                (shape[1] - kernel_size[1]) // self.stride[1] + 1,
-            )
-
-        self.conv_size = conv_size
-        self.conv_prod = int(np.prod(conv_size))
-        self.kernel_prod = int(np.prod(kernel_size))
-         
-        assert (
-            target.n == self.out_channels * self.conv_prod
-        ), "Target layer size must be n_filters * (kernel_size ** 2)."
-
-        w = torch.ones(
-            self.in_channels, 
-            self.out_channels * self.conv_prod,
-            self.kernel_prod
-        ) * (self.target.thresh - self.target.rest)
-
-        if self.wmin != -np.inf or self.wmax != np.inf:
-            w = torch.clamp(w, self.wmin, self.wmax)
-
-        # w = w.unsqueeze(0).repeat(self.target.batch_size, 1, 1, 1) #batch size
-        self.w = Parameter(w, requires_grad=False)
-        self.b = Parameter(kwargs.get("b", None), requires_grad=False)
-
+        # self.register_buffer("firing_rates", torch.zeros(source.s.shape))
 
     def compute(self, s: torch.Tensor) -> torch.Tensor:
         # language=rst
         """
-        Compute pre-activations given spikes using layer weights.
+        Compute max-pool pre-activations given spikes using online firing rate
+        estimates.
 
         :param s: Incoming spikes.
         :return: Incoming spikes multiplied by synaptic weights (with or without
             decaying spike activation).
         """
-        # Compute multiplication of pre-activations by connection weights
-        
-        self.s_unfold = s.unfold(
-            -2,self.kernel_size[0],self.stride[0]
-        ).unfold(
-            -2,self.kernel_size[1],self.stride[1]
-        ).reshape(
-            s.shape[0], 
-            self.in_channels,
-            self.conv_prod,
-            self.kernel_prod,
-        ).repeat(
-            1,
-            1,
-            self.out_channels,
-            1,
-        )
-        #print(self.s_unfold.shape,self.w.unsqueeze(0).shape)
-        a_post = self.s_unfold * self.w.unsqueeze(0)#reshape(1, w_shape[0], self.out_channels, self.conv_prod, self.kernel_prod)
-        #.repeat(self.target.batch_size, 1, 1, 1)
-        #print(a_post.shape, a_post.sum(-1).sum(1).shape, a_post.sum(-1).sum(1).view(a_post.shape[0], self.out_channels, *self.conv_size,).shape)
-        return a_post.sum(-1).sum(1).view(
-            a_post.shape[0], self.out_channels, *self.conv_size,
-            )
+        # self.firing_rates -= self.decay * self.firing_rates
+        # self.firing_rates += s.float().squeeze()
+
+        return F.max_pool2d(s.float(),kernel_size=self.kernel_size,stride=self.stride,padding=self.padding,dilation=self.dilation,) * (self.target.thresh - self.target.rest)
 
     def update(self, **kwargs) -> None:
         # language=rst
         """
         Compute connection's update rule.
         """
-        super().update(**kwargs)
+        #super().update(**kwargs)
+        pass
 
     def normalize(self) -> None:
         # language=rst
         """
-        Normalize weights so each target neuron has sum of connection weights equal to
-        ``self.norm``.
+        No weights -> no normalization.
         """
-        if self.norm is not None:
-            pass
+        pass
 
     def reset_state_variables(self) -> None:
         # language=rst
@@ -1007,14 +959,130 @@ class MaxPool2dLocalConnection(AbstractConnection):
         Contains resetting logic for the connection.
         """
         super().reset_state_variables()
+        
+#     # language=rst
+#     """
+#     Specifies a locally connected max pooling connection between two populations of neurons.
+#     """
+
+#     def __init__(
+#         self,
+#         source: Nodes,
+#         target: Nodes,
+#         kernel_size: Union[int, Tuple[int, int]],
+#         stride: Union[int, Tuple[int, int]],
+#         in_channels: int,
+#         **kwargs
+#     ) -> None:
+#         # language=rst
+#         """
+
+#         """
+#         super().__init__(source, target, **kwargs)
+
+#         kernel_size = _pair(kernel_size)
+        
+#         self.kernel_size = _pair(kernel_size)
+#         self.stride = _pair(stride)
+#         self.in_channels = in_channels
+#         self.out_channels = in_channels
+#         self.padding = kwargs.get('padding', 0)
+
+#         if "input_shape" not in kwargs.keys():
+#             raise ValueError("Please specify the layer square input shape")
+
+#         shape = kwargs["input_shape"]
+
+#         if shape is None:
+#             sqrt = int(np.sqrt(source.n))
+#             shape = _pair(sqrt)
+
+#         if kernel_size == shape:
+#             conv_size = [1, 1]
+#         else:
+#             conv_size = (
+#                 (shape[0] - kernel_size[0]) // self.stride[0] + 1,
+#                 (shape[1] - kernel_size[1]) // self.stride[1] + 1,
+#             )
+
+#         self.conv_size = conv_size
+#         self.conv_prod = int(np.prod(conv_size))
+#         self.kernel_prod = int(np.prod(kernel_size))
+         
+#         assert (
+#             target.n == self.out_channels * self.conv_prod
+#         ), "Target layer size must be n_filters * (kernel_size ** 2)."
+
+#         w = torch.ones(
+#             self.in_channels, 
+#             self.out_channels * self.conv_prod,
+#             self.kernel_prod
+#         ) * (self.target.thresh - self.target.rest)
+
+#         if self.wmin != -np.inf or self.wmax != np.inf:
+#             w = torch.clamp(w, self.wmin, self.wmax)
+
+#         # w = w.unsqueeze(0).repeat(self.target.batch_size, 1, 1, 1) #batch size
+#         self.w = Parameter(w, requires_grad=False)
+#         self.b = Parameter(kwargs.get("b", None), requires_grad=False)
 
 
+#     def compute(self, s: torch.Tensor) -> torch.Tensor:
+#         # language=rst
+#         """
+#         Compute pre-activations given spikes using layer weights.
 
+#         :param s: Incoming spikes.
+#         :return: Incoming spikes multiplied by synaptic weights (with or without
+#             decaying spike activation).
+#         """
+#         # Compute multiplication of pre-activations by connection weights
+        
+#         self.s_unfold = s.unfold(
+#             -2,self.kernel_size[0],self.stride[0]
+#         ).unfold(
+#             -2,self.kernel_size[1],self.stride[1]
+#         ).reshape(
+#             s.shape[0], 
+#             self.in_channels,
+#             self.conv_prod,
+#             self.kernel_prod,
+#         ).repeat(
+#             1,
+#             1,
+#             self.out_channels,
+#             1,
+#         )
+#         #print(self.s_unfold.shape,self.w.unsqueeze(0).shape)
+#         a_post = self.s_unfold * self.w.unsqueeze(0)#reshape(1, w_shape[0], self.out_channels, self.conv_prod, self.kernel_prod)
+#         #.repeat(self.target.batch_size, 1, 1, 1)
+#         #print(a_post.shape, a_post.sum(-1).sum(1).shape, a_post.sum(-1).sum(1).view(a_post.shape[0], self.out_channels, *self.conv_size,).shape)
+#         return a_post.sum(-1).sum(1).view(
+#             a_post.shape[0], self.out_channels, *self.conv_size,
+#             )
 
+#     def update(self, **kwargs) -> None:
+#         # language=rst
+#         """
+#         Compute connection's update rule.
+#         """
+#         super().update(**kwargs)
 
+#     def normalize(self) -> None:
+#         # language=rst
+#         """
+#         Normalize weights so each target neuron has sum of connection weights equal to
+#         ``self.norm``.
+#         """
+#         if self.norm is not None:
+#             pass
 
-
-
+#     def reset_state_variables(self) -> None:
+#         # language=rst
+#         """
+#         Contains resetting logic for the connection.
+#         """
+#         super().reset_state_variables()
 
 
 

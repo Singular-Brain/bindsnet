@@ -13,6 +13,7 @@ from ..network.topology import (
     Conv2dConnection,
     LocalConnection,
     LocalConnectionOrig,
+    MaxPool2dLocalConnection,
 )
 from ..utils import im2col_indices
 
@@ -186,6 +187,8 @@ class PostPre(LearningRule):
         elif isinstance(connection, Conv2dConnection):
             self.update = self._conv2d_connection_update
         elif isinstance(connection, LocalConnection):
+            self.update = self._local_connection_update
+        elif isinstance(connection, MaxPool2dLocalConnection):
             self.update = self._local_connection_update
         else:
             raise NotImplementedError(

@@ -402,24 +402,15 @@ class Network(torch.nn.Module):
                         current_inputs[l] += inputs[l][t]
                     else:
                         current_inputs[l] = inputs[l][t]
-                        
 
                 if one_step:
                     # Get input to this layer (one-step mode).
                     current_inputs.update(self._get_inputs(layers=[l]))
 
                 if l in current_inputs:
-                    #print(l)
                     self.layers[l].forward(x=current_inputs[l])
                 else:
                     self.layers[l].forward(x=torch.zeros(self.layers[l].s.shape))
-
-
-                if l == 'maxPool1':
-                    if self.layers[l].s.sum() > 0:
-                        print(l,self.layers[l].s)
-                        print('main', self.layers['main'].s)
-
                 
                 # Clamp neurons to spike.
                 clamp = clamps.get(l, None)
