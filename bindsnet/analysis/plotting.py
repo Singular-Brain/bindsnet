@@ -65,6 +65,25 @@ def plot_input(
 
     return axes, ims
 
+def plot_convergence_and_histogram(
+    weights: torch.Tensor,
+    convergences: List,
+    wmin: Optional[float] = 0,
+    wmax: Optional[float] = 1,
+    im: Optional[AxesImage] = None,
+    figsize: Tuple[int, int] = (7, 7),
+    cmap: str = "hot_r",
+    save: Optional[str] = None,
+) -> AxesImage:
+
+    fig, axs = plt.subplots(2,figsize=figsize)
+    axs[0].hist(weights.flatten().cpu())
+    axs[0].set_title('Histogram')
+    
+    axs[1].plot(convergences)
+    axs[1].set_title('Convergence')
+    axs[1].set(xlabel='trials', ylabel='Convergence rate')
+    
 
 def plot_spikes(
     spikes: Dict[str, torch.Tensor],
