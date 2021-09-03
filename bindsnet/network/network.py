@@ -386,7 +386,9 @@ class Network(torch.nn.Module):
                     kwargs['true_label'] = self.true_label
                     kwargs['give_reward'] = True
                     #TODO: if you want per spike modulation, pls calculate rew_base and punish_base
-                    assert kwargs['variant'] == 'scalar', "the variant must be scalar"
+                    kwargs['target_spikes'] = sum_spikes[kwargs['true_label']]
+                    kwargs['sum_spikes'] =  sum_spikes
+                    assert kwargs['variant'] == 'scalar' or kwargs['variant'] == 'per_spike', "the variant must be scalar or per_spike"
                     if self.learning == True:
                         kwargs["reward"] = self.reward_fn.compute(**kwargs)
             
