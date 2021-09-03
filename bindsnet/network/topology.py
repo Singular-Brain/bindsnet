@@ -773,7 +773,7 @@ class LocalConnection(AbstractConnection):
                 self.in_channels, 
                 self.out_channels * self.conv_prod,
                 self.kernel_prod
-            )
+            ) * (self.wmax - self.wmin) + self.wmin 
         else:
             assert w.shape == (
                 self.in_channels, 
