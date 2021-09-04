@@ -237,9 +237,6 @@ class PostPre(LearningRule):
         width_out = self.connection.conv_size[0]
         height_out = self.connection.conv_size[1]
 
-        ## source_x (s): ch_in, w_in, h_in
-        ## s_unfold: ch_in, ch_out * w_out * h_out, k ** 2
-
 
         ## target_x (s) ch_o, w_o, h_o  
         target_x = self.target.x.reshape(batch_size, out_channels * width_out * height_out, 1) 
@@ -268,12 +265,12 @@ class PostPre(LearningRule):
         # Pre-synaptic update.
         if self.nu[0]:
             pre = self.reduction(torch.bmm(target_x,source_s), dim=0)
-            self.connection.w -= self.nu[0] * pre.view(self.connection.w.size())
+            self.connection.w -= self.nu[0] * pre.view(self.connection.w.size())*self.soft_bound_decay()
 
         # Post-synaptic update.
         if self.nu[1]:
             post = self.reduction(torch.bmm(target_s, source_x),dim=0)
-            self.connection.w += self.nu[1] * post.view(self.connection.w.size())
+            self.connection.w += self.nu[1] * post.view(self.connection.w.size())*self.soft_bound_decay()
 
         super().update()
 
