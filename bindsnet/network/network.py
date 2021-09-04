@@ -343,7 +343,6 @@ class Network(torch.nn.Module):
         kwargs['give_reward'] = False
         if self.reward_fn is not None and self.learning == True:
             kwargs["reward"] = self.reward_fn.compute(**kwargs)
-            print(kwargs["reward"])
 
         # Dynamic setting of batch size.
         if inputs != {}:
