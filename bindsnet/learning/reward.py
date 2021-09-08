@@ -189,8 +189,8 @@ class DynamicDopamineInjection(AbstractReward):
                 if self.give_reward:
                     if self.label == kwargs['pred_label']:
                         self.dopamine = self.rew_base
-                        self.rew_base =  torch.clip((1 - 1/self.dps_factor) * self.rew_base,  min=self.dps/self.dps_factor,max=self.dps*self.dps_factor)
-                        self.punish_base = torch.clip((1 + 1/self.dps_factor) * self.punish_base,  min=self.neg_dps/self.dps_factor,max=self.neg_dps*self.dps_factor)
+                        self.rew_base =  torch.clip(self.rew_base - self.dps/self.dps_factor ,  min=self.dps/self.dps_factor,max=self.dps*self.dps_factor)
+                        self.punish_base = torch.clip(self.punish_base + self.neg_dps/self.dps_factor,  min=self.neg_dps/self.dps_factor,max=self.neg_dps*self.dps_factor)
                     else:
                         self.dopamine = -self.punish_base
                         self.rew_base =  torch.clip(self.rew_base + self.dps/self.dps_factor ,  min=self.dps/self.dps_factor,max=self.dps*self.dps_factor)
