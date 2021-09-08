@@ -204,8 +204,8 @@ class DynamicDopamineInjection(AbstractReward):
                         self.punish_base = torch.clip(torch.tensor([self.punish_base + self.neg_dps/self.dps_factor]),  min=self.neg_dps/self.dps_factor,max=self.neg_dps*self.dps_factor)
                     else:
                         self.dopamine = -self.punish_base
-                        self.rew_base =  torch.clip(torch.tensor([self.rew_base + self.dps/self.dps_factor]),  min=self.dps/self.dps_factor,max=self.dps*self.dps_factor)
-                        self.punish_base = torch.clip(torch.tensor([self.punish_base - self.neg_dps/self.dps_factor]),  min=self.neg_dps/self.dps_factor,max=self.neg_dps*self.dps_factor)
+                        self.rew_base =  float(torch.clip(torch.tensor([self.rew_base + self.dps/self.dps_factor]),  min=self.dps/self.dps_factor,max=self.dps*self.dps_factor))
+                        self.punish_base = float(torch.clip(torch.tensor([self.punish_base - self.neg_dps/self.dps_factor]),  min=self.neg_dps/self.dps_factor,max=self.neg_dps*self.dps_factor))
                 # else: 
                 #     self.rew_base -= self.decay_dps * (self.rew_base - self.dps) # self.dps = initial value of rew_base
                 #     self.punish_base -= self.decay_dps * (self.punish_base - self.neg_dps)
