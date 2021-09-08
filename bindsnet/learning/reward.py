@@ -156,6 +156,11 @@ class DynamicDopamineInjection(AbstractReward):
 
             elif self.variant == 'per_spike' and self.give_reward:
                 self.dopamine += kwargs['target_spikes'] * self.rew_base - (kwargs['sum_spikes'].sum()-kwargs['target_spikes']) * self.punish_base
+            elif self.variant == 'per_spike_target' and self.give_reward:
+                if self.label == kwargs['pred_label']:
+                    self.dopamine += kwargs['target_spikes'] * self.rew_base
+                else:
+                    self.dopamine -= kwargs['target_spikes'] * self.punish_base
 
         elif self.sub_variant == 'RPE':
             if self.variant == 'scalar':
