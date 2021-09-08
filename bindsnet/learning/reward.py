@@ -156,6 +156,7 @@ class DynamicDopamineInjection(AbstractReward):
 
             elif self.variant == 'per_spike' and self.give_reward:
                 self.dopamine += kwargs['target_spikes'] * self.rew_base - (kwargs['sum_spikes'].sum()-kwargs['target_spikes']) * self.punish_base
+            
             elif self.variant == 'per_spike_target' and self.give_reward:
                 if self.label == kwargs['pred_label']:
                     self.dopamine += kwargs['target_spikes'] * self.rew_base
@@ -179,7 +180,17 @@ class DynamicDopamineInjection(AbstractReward):
                 else:
                     self.rew_base = torch.clip(self.rew_base - self.td_nu*(self.accumulated_reward-self.reward_predict_episode), min=self.dps/self.dps_factor,max=self.dps*self.dps_factor)
                     self.punish_base = torch.clip(self.punish_base + self.td_nu*(self.accumulated_reward-self.reward_predict_episode), min=self.neg_dps/self.dps_factor,max=self.neg_dps*self.dps_factor)
-
+           
+            elif self.variant == 'per_spike_target':
+                if self.give_reward:
+                    if self.label == kwargs['pred_label']:
+                        self.dopamine += kwargs['target_spikes'] * self.rew_base
+                    else:
+                        self.dopamine -= kwargs['target_spikes'] * self.punish_base
+                else:
+                    self.rew_base = torch.clip(self.rew_base - self.td_nu*(self.accumulated_reward-self.reward_predict_episode), min=self.dps/self.dps_factor,max=self.dps*self.dps_factor)
+                    self.punish_base = torch.clip(self.punish_base + self.td_nu*(self.accumulated_reward-self.reward_predict_episode), min=self.neg_dps/self.dps_factor,max=self.neg_dps*self.dps_factor)
+            
             elif self.variant == 'true_pred' or self.variant == 'pure_per_spike':
                 self.dps = torch.clip(self.dps - self.td_nu*(self.accumulated_reward-self.reward_predict_episode),min=self.rew_base/self.dps_factor, max=self.rew_base*self.dps_factor)
                 self.neg_dps = torch.clip(self.neg_dps + self.td_nu*(self.accumulated_reward-self.reward_predict_episode),min=self.punish_base/self.dps_factor, max=self.punish_base*self.dps_factor)
@@ -199,7 +210,7 @@ class DynamicDopamineInjection(AbstractReward):
                     self.rew_base -= self.decay_dps * (self.rew_base - self.dps) # self.dps = initial value of rew_base
                     self.punish_base -= self.decay_dps * (self.punish_base - self.neg_dps)
                     
-            elif self.variant == 'true_pred' or self.variant == 'pure_per_spike' or self.variant == 'per_spike':
+            elif self.variant == 'true_pred' or self.variant == 'pure_per_spike' or self.variant == 'per_spike' or self.variant == 'per_spike_target':
                 assert True, "Not supported"
                 # self.dps = self.dps -
                 # self.neg_dps = self.neg_dps + 
