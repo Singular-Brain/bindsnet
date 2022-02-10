@@ -9,13 +9,13 @@ def single(
     dt: float = 1.0,
     sparsity: float = 0.5,
     device="cpu",
-    **kwargs
+    **kwargs,
 ) -> torch.Tensor:
     # language=rst
     """
     Generates timing based single-spike encoding. Spike occurs earlier if the
     intensity of the input feature is higher. Features whose value is lower than
-    threshold is remain silent.
+    the threshold remain silent.
 
     :param datum: Tensor of shape ``[n_1, ..., n_k]``.
     :param time: Length of the input and output.
@@ -52,7 +52,7 @@ def bernoulli(
     time: Optional[int] = None,
     dt: float = 1.0,
     device="cpu",
-    **kwargs
+    **kwargs,
 ) -> torch.Tensor:
     # language=rst
     """
@@ -102,7 +102,7 @@ def poisson(
     dt: float = 1.0,
     device="cpu",
     approx=False,
-    **kwargs
+    **kwargs,
 ) -> torch.Tensor:
     # language=rst
     """

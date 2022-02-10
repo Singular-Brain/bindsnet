@@ -1,9 +1,9 @@
-from typing import Optional, Dict
+from typing import Dict, Optional
 
 import torch
 import torchvision
 
-from ..encoding import Encoder, NullEncoder
+from bindsnet.encoding import Encoder, NullEncoder
 
 
 def create_torchvision_dataset_wrapper(ds_type):
@@ -34,7 +34,7 @@ def create_torchvision_dataset_wrapper(ds_type):
             image_encoder: Optional[Encoder] = None,
             label_encoder: Optional[Encoder] = None,
             *args,
-            **kwargs
+            **kwargs,
         ):
             # language=rst
             """

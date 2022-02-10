@@ -1,10 +1,12 @@
-from abc import ABC
-from typing import Union, Optional, Sequence
 import warnings
 from bindsnet import manual_seed
+from abc import ABC
+from typing import Optional, Sequence, Union
 
-import torch
 import numpy as np
+import torch
+
+from bindsnet.utils import im2col_indices
 
 from ..network.nodes import SRM0Nodes
 from ..network.topology import (
@@ -15,7 +17,6 @@ from ..network.topology import (
     LocalConnectionOrig,
     MaxPool2dLocalConnection,
 )
-from ..utils import im2col_indices
 
 
 class LearningRule(ABC):
@@ -40,7 +41,7 @@ class LearningRule(ABC):
         :param nu: Single or pair of learning rates for pre- and post-synaptic events.
         :param reduction: Method for reducing parameter updates along the batch
             dimension.
-        :param weight_decay: Constant multiple to decay weights by on each iteration.
+        :param weight_decay: Coefficient controlling rate of decay of the weights each iteration.
         """
         # Connection parameters.
         self.connection = connection
@@ -94,7 +95,8 @@ class LearningRule(ABC):
         
         # Bound weights.
         if (
-            self.connection.wmin != -np.inf or self.connection.wmax != np.inf
+            (self.connection.wmin != -np.inf).any()
+            or (self.connection.wmax != np.inf).any()
         ) and not isinstance(self, NoOp):
             self.connection.w.clamp_(self.connection.wmin, self.connection.wmax)
 
@@ -126,7 +128,7 @@ class NoOp(LearningRule):
         :param nu: Single or pair of learning rates for pre- and post-synaptic events.
         :param reduction: Method for reducing parameter updates along the batch
             dimension.
-        :param weight_decay: Constant multiple to decay weights by on each iteration.
+        :param weight_decay: Coefficient controlling rate of decay of the weights each iteration.
         """
         super().__init__(
             connection=connection,
@@ -168,7 +170,7 @@ class PostPre(LearningRule):
         :param nu: Single or pair of learning rates for pre- and post-synaptic events.
         :param reduction: Method for reducing parameter updates along the batch
             dimension.
-        :param weight_decay: Constant multiple to decay weights by on each iteration.
+        :param weight_decay: Coefficient controlling rate of decay of the weights each iteration.
         """
         super().__init__(
             connection=connection,
@@ -380,7 +382,7 @@ class WeightDependentPostPre(LearningRule):
         :param nu: Single or pair of learning rates for pre- and post-synaptic events.
         :param reduction: Method for reducing parameter updates along the batch
             dimension.
-        :param weight_decay: Constant multiple to decay weights by on each iteration.
+        :param weight_decay: Coefficient controlling rate of decay of the weights each iteration.
         """
         super().__init__(
             connection=connection,
@@ -391,9 +393,9 @@ class WeightDependentPostPre(LearningRule):
         )
 
         assert self.source.traces, "Pre-synaptic nodes must record spike traces."
-        assert (
-            connection.wmin != -np.inf and connection.wmax != np.inf
-        ), "Connection must define finite wmin and wmax."
+        assert (connection.wmin != -np.inf).any() and (
+            connection.wmax != np.inf
+        ).any(), "Connection must define finite wmin and wmax."
 
         self.wmin = connection.wmin
         self.wmax = connection.wmax
@@ -518,7 +520,7 @@ class Hebbian(LearningRule):
         :param nu: Single or pair of learning rates for pre- and post-synaptic events.
         :param reduction: Method for reducing parameter updates along the batch
             dimension.
-        :param weight_decay: Constant multiple to decay weights by on each iteration.
+        :param weight_decay: Coefficient controlling rate of decay of the weights each iteration.
         """
         super().__init__(
             connection=connection,
@@ -624,7 +626,7 @@ class MSTDP(LearningRule):
             respectively.
         :param reduction: Method for reducing parameter updates along the minibatch
             dimension.
-        :param weight_decay: Constant multiple to decay weights by on each iteration.
+        :param weight_decay: Coefficient controlling rate of decay of the weights each iteration.
 
         Keyword arguments:
 
@@ -829,7 +831,7 @@ class MSTDPET(LearningRule):
             respectively.
         :param reduction: Method for reducing parameter updates along the minibatch
             dimension.
-        :param weight_decay: Constant multiple to decay weights by on each iteration.
+        :param weight_decay: Coefficient controlling rate of decay of the weights each iteration.
 
         Keyword arguments:
 
@@ -1045,7 +1047,7 @@ class Rmax(LearningRule):
             respectively.
         :param reduction: Method for reducing parameter updates along the minibatch
             dimension.
-        :param weight_decay: Constant multiple to decay weights by on each iteration.
+        :param weight_decay: Coefficient controlling rate of decay of the weights each iteration.
 
         Keyword arguments:
 

@@ -1,12 +1,12 @@
 import tempfile
-from typing import Dict, Optional, Type, Iterable
+from typing import Dict, Iterable, Optional, Type
 
 import torch
 
-from .monitors import AbstractMonitor
-from .nodes import Nodes, CSRMNodes
-from .topology import AbstractConnection
-from ..learning.reward import AbstractReward
+from bindsnet.learning.reward import AbstractReward
+from bindsnet.network.monitors import AbstractMonitor
+from bindsnet.network.nodes import CSRMNodes, Nodes
+from bindsnet.network.topology import AbstractConnection
 
 from bindsnet import manual_seed
 
