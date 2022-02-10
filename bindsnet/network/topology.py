@@ -6,6 +6,7 @@ import torch
 from torch.nn import Module, Parameter
 import torch.nn.functional as F
 from torch.nn.modules.utils import _pair
+from ..learning import NoOp
 
 from bindsnet.network.nodes import Nodes, CSRMNodes
 from bindsnet import manual_seed
@@ -57,8 +58,6 @@ class AbstractConnection(ABC, Module):
         self.weight_decay = weight_decay
         self.reduction = reduction
         self.soft_bound = kwargs.get('soft_bound', False)
-
-        from ..learning import NoOp
 
         self.update_rule = kwargs.get("update_rule", NoOp)
         self.wmin = kwargs.get("wmin", -np.inf)
@@ -684,9 +683,9 @@ class LocalConnectionOrig(AbstractConnection):
         super().reset_state_variables()
 
 class LocalConnection(AbstractConnection):
-    # language=rst
     """
-    Specifies a locally connected connection between one or two populations of neurons.
+    2D Local connection between one or two population of neurons supporting multi-channel 3D inputs;
+    the logic is different from the BindsNet implementaion, but some lines are unchanged
     """
 
     def __init__(
@@ -697,6 +696,7 @@ class LocalConnection(AbstractConnection):
         stride: Union[int, Tuple[int, int]],
         in_channels: int,
         out_channels: int,
+        input_shape: Tuple,
         nu: Optional[Union[float, Sequence[float]]] = None,
         reduction: Optional[callable] = None,
         weight_decay: float = 0.0,
@@ -704,19 +704,20 @@ class LocalConnection(AbstractConnection):
     ) -> None:
         # language=rst
         """
-        Instantiates a ``LocalConnection`` object. Source population should be
-        two-dimensional.
+        Instantiates a 'LocalConnection` object. Source population can be multi-channel
 
         Neurons in the post-synaptic population are ordered by receptive field; that is,
-        if there are ``n_conv`` neurons in each post-synaptic patch, then the first
-        ``n_conv`` neurons in the post-synaptic population correspond to the first
+        if there are `n_conv` neurons in each post-synaptic patch, then the first
+        `n_conv` neurons in the post-synaptic population correspond to the first
         receptive field, the second ``n_conv`` to the second receptive field, and so on.
 
         :param source: A layer of nodes from which the connection originates.
         :param target: A layer of nodes to which the connection connects.
         :param kernel_size: Horizontal and vertical size of convolutional kernels.
         :param stride: Horizontal and vertical stride for convolution.
-        :param n_filters: Number of locally connected filters per pre-synaptic region.
+        :param in_channels: The number of input channels
+        :param out_channels: The number of output channels
+        :param input_shape: The 2D shape of each input channel
         :param nu: Learning rate for both pre- and post-synaptic events.
         :param reduction: Method for reducing parameter updates along the minibatch
             dimension.
@@ -725,7 +726,7 @@ class LocalConnection(AbstractConnection):
         Keyword arguments:
 
         :param LearningRule update_rule: Modifies connection parameters according to
-            some rule.
+            some rule. For now, only PostPre has been implemented for the multi-channel-input implementation
         :param torch.Tensor w: Strengths of synapses.
         :param torch.Tensor b: Target population bias.
         :param float wmin: Minimum allowed value on the connection weights.
@@ -736,20 +737,17 @@ class LocalConnection(AbstractConnection):
         """
         super().__init__(source, target, nu, reduction, weight_decay, **kwargs)
 
-        kernel_size = _pair(kernel_size)
-        stride = _pair(stride)
-
-        self.kernel_size = kernel_size
-        self.stride = stride
+        self.kernel_size = _pair(kernel_size)
+        self.stride = _pair(stride)
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.padding = kwargs.get('padding', 0)
 
-        shape = kwargs.get("input_shape", None)
+        shape = input_shape
         if shape is None:
             sqrt = int(np.sqrt(source.n))
             shape = _pair(sqrt)
-
+            
         if kernel_size == shape:
             conv_size = [1, 1]
         else:
@@ -783,13 +781,16 @@ class LocalConnection(AbstractConnection):
         if self.wmin != -np.inf or self.wmax != np.inf:
             w = torch.clamp(w, self.wmin, self.wmax)
 
-        # w = w.unsqueeze(0).repeat(self.target.batch_size, 1, 1, 1) #batch size
         self.w = Parameter(w, requires_grad=False)
         self.b = Parameter(kwargs.get("b", None), requires_grad=False)
 
 
+        self._active_update_rule = self.update_rule 
+        self._deactivated_update_rule= NoOp(
+            connection=self,
+        )
+
     def compute(self, s: torch.Tensor) -> torch.Tensor:
-        # language=rst
         """
         Compute pre-activations given spikes using layer weights.
 
@@ -801,22 +802,6 @@ class LocalConnection(AbstractConnection):
         # s: batch, ch_in, w_in, h_in => s_unfold: batch, ch_in, ch_out * w_out * h_out, k ** 2
         # w: ch_in, ch_out * w_out * h_out, k ** 2
         # a_post: batch, ch_in, ch_out * w_out * h_out, k ** 2 => batch, ch_out * w_out * h_out (= target.n)
-        # self.s_unfold = s.unfold(
-        #     -2,self.kernel_size[0],self.stride[0]
-        # ).unfold(
-        #     -2,self.kernel_size[1],self.stride[1]
-        # ).reshape(
-        #     s.shape[0], 
-        #     self.in_channels,
-        #     1,
-        #     self.conv_prod,
-        #     self.kernel_prod,)
-        # # ).repeat(
-        # #     1,
-        # #     1,
-        # #     self.out_channels,
-        # #     1,
-        # # )
         self.s_unfold = s.unfold(
             -2,self.kernel_size[0],self.stride[0]
         ).unfold(
@@ -832,11 +817,9 @@ class LocalConnection(AbstractConnection):
             self.out_channels,
             1,
         )
-        #print(self.s_unfold.shape,self.w.unsqueeze(0).shape)
-        w_shape = self.w.shape
-        a_post = self.s_unfold * self.w.unsqueeze(0)#reshape(1, w_shape[0], self.out_channels, self.conv_prod, self.kernel_prod)
-        #.repeat(self.target.batch_size, 1, 1, 1)
-        #print(a_post.shape, a_post.sum(-1).sum(1).shape, a_post.sum(-1).sum(1).view(a_post.shape[0], self.out_channels, *self.conv_size,).shape)
+
+        a_post = self.s_unfold.to(self.w.device) * self.w.unsqueeze(0)
+        
         return a_post.sum(-1).sum(1).view(
             a_post.shape[0], self.out_channels, *self.conv_size,
             )
@@ -849,7 +832,6 @@ class LocalConnection(AbstractConnection):
         super().update(**kwargs)
 
     def normalize(self) -> None:
-        # language=rst
         """
         Normalize weights so each target neuron has sum of connection weights equal to
         ``self.norm``.
@@ -857,7 +839,6 @@ class LocalConnection(AbstractConnection):
         if self.norm is not None:
             # get a view and modify in-place
             # w: ch_in, ch_out * w_out * h_out, k ** 2
-
             w = self.w.view(
                 self.w.shape[0]*self.w.shape[1], self.w.shape[2]
             )
@@ -865,20 +846,47 @@ class LocalConnection(AbstractConnection):
             for fltr in range(w.shape[0]):
                 w[fltr,:] *= self.norm / w[fltr,:].sum(0)
 
-        # if self.norm is not None:
-        #     w = self.w.view(self.source.n, self.target.n)
-        #     print(w[0,:],w.shape)
-        #     w *= self.norm / self.w.sum(0).view(1, -1)
-        #     print(self.norm / (self.w.sum(0).view(1, -1)),(self.norm / (self.w.sum(0).view(1, -1))).shape)
 
     def reset_state_variables(self) -> None:
-        # language=rst
         """
         Contains resetting logic for the connection.
         """
         super().reset_state_variables()
 
         self.target.reset_state_variables()
+
+
+    def activate_learning(self):
+        self.update_rule = self._active_update_rule
+
+    def deactivate_learning(self):
+        self.update_rule = self._deactivated_update_rule
+
+class DepthWiseLocalConnection2D(LocalConnection2D):
+    # w: ch_in, ch_out * w_out * h_out, k ** 2
+    def __init__(self, kernel_depth, **kwargs):
+        super().__init__(**kwargs)
+        self.kernel_depth = kernel_depth
+        assert (
+            self.out_channels % (self.in_channels - self.kernel_depth + 1) ,
+            f"out_channels (={self.out_channels}) must be a divisible by in_channels - kernel_depth + 1 (={self.in_channels - self.kernel_depth + 1})"
+        )
+        self.n_same_depth_filters = self.out_channels // (self.in_channels - self.kernel_depth + 1) 
+        self.mask = torch.zeros_like(self.w)
+        for depth in range(self.in_channels - self.kernel_depth):
+            self.mask[
+                depth:depth+self.kernel_depth, 
+                self.n_same_depth_filters*depth*self.conv_prod:self.n_same_depth_filters*(depth+1)*self.conv_prod,
+                :] = 1
+    
+    
+    def update(self, **kwargs) -> None:
+        """
+        Compute connection's update rule.
+        """
+        if kwargs["mask"] is None:
+            kwargs["mask"] = self.mask
+        super().update(**kwargs)
 
 
 
