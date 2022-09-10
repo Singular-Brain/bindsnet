@@ -8,26 +8,24 @@ This package is used as part of ongoing research on applying SNNs to machine lea
 
 Check out the [BindsNET examples](https://github.com/BindsNET/bindsnet/tree/master/examples) for a collection of experiments, functions for the analysis of results, plots of experiment outcomes, and more. Documentation for the package can be found [here](https://bindsnet-docs.readthedocs.io).
 
-[![Build Status](https://travis-ci.com/BindsNET/bindsnet.svg?branch=master)](https://travis-ci.com/BindsNET/bindsnet)
+![Build Status](https://github.com/BindsNET/bindsnet/actions/workflows/python-app.yml/badge.svg?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/bindsnet-docs/badge/?version=latest)](https://bindsnet-docs.readthedocs.io/?badge=latest)
-[![HitCount](http://hits.dwyl.io/Hananel-Hazan/bindsnet.svg)](http://hits.dwyl.io/Hananel-Hazan/bindsnet)
 [![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/bindsnet_/community)
 
 ## Requirements
 
-- Python 3.6
-- `requirements.txt`
+- Python >=3.7.10,<3.10
 
 ## Setting things up
 
-### Using pip
-BindsNET is available through its git repository. Issue
+## Using Pip
+To install the most recent stable release from the GitHub repository
 
 ```
 pip install git+https://github.com/BindsNET/bindsnet.git
 ```
 
-to get the most recent stable release. Or, to build the `bindsnet` package from source, clone the GitHub repository, change directory to the top level of this project, and issue
+Or, to build the `bindsnet` package from source, clone the GitHub repository, change directory to the top level of this project, and issue
 
 ```
 pip install .
@@ -47,7 +45,7 @@ To install the packages necessary to interface with the [OpenAI gym RL environme
 We also provide a Dockerfile in which BindsNET and all of its dependencies come installed in. Issue
 
 ```
-docker image build .
+docker build .
 ```
 at the top level directory of this project to create a docker image. 
 

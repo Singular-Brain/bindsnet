@@ -2,13 +2,17 @@ import os
 import torch
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.utils import make_grid
-import numpy as np
-
 from abc import ABC
-from typing import Union, Optional, Iterable, Dict
+from typing import TYPE_CHECKING, Dict, Iterable, Optional, Union
 
-from .nodes import Nodes
-from .topology import AbstractConnection
+import numpy as np
+import torch
+
+from bindsnet.network.nodes import Nodes
+from bindsnet.network.topology import AbstractConnection
+
+if TYPE_CHECKING:
+    from .network import Network
 
 from bindsnet import manual_seed
 
